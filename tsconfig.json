@@ -1,0 +1,26 @@
+{
+  "compilerOptions": {
+    "target": "esnext",
+    "lib": [
+      "es2020"
+    ],
+    "resolveJsonModule": true,
+    "experimentalDecorators": true,
+    "module": "commonjs",
+    "allowJs": true,
+    "noEmit": true,
+    "esModuleInterop": true,
+    "strict": false,
+    "removeComments": true,
+    "moduleResolution": "node",
+    "baseUrl": "./",
+    // "paths": {
+    //   "fridacontainer/*": [
+    //     "./node_modules/@dmemory/fridacontainer/dist/*"
+    //   ]
+    // },
+    "skipLibCheck": true,
+    "allowSyntheticDefaultImports": true,
+    "forceConsistentCasingInFileNames": true
+  }
+}
