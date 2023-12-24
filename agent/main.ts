@@ -7,8 +7,13 @@ globalThis.test = () => {
 
     Java.perform(() => {
 
-        let artMethod_0: NativePointer = Java.use("com.unity3d.player.UnityPlayer").UnitySendMessage.handle
+        // let artMethod_0: NativePointer = Java.use("com.unity3d.player.UnityPlayer").UnitySendMessage.handle
+        let artMethod_0: NativePointer = Java.use("com.unity3d.player.Camera2Wrapper").deinitCamera2Jni.handle
         let artMethod_1: NativePointer = Java.use("com.unity3d.player.UnityPlayer").IsWindowTranslucent.handle
+
+        // public static void com.unity3d.player.UnityPlayer.UnitySendMessage(java.lang.String, java.lang.String, java.lang.String)
+        var JavaString = Java.use("java.lang.String")
+        Java.use("com.unity3d.player.UnityPlayer").UnitySendMessage(JavaString.$new("1"), JavaString.$new("2"), JavaString.$new("3"))
 
         let art_0 = new ArtMethod(artMethod_0)
         let art_1 = new ArtMethod(artMethod_1)

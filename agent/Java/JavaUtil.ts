@@ -59,9 +59,11 @@ globalThis.listJavaMethods = (className: string | number = "com.unity3d.player.U
             let currentIndex = ++countFields
             // flag += PrettyJavaAccessFlags(getArtFieldSpec(field["_p"][3]).accessFlags)
             try {
-                result = `\n\t[${currentIndex}] ${flag}${members.fields_name[index]} : ${field.value} | ${field.fieldReturnType}`
+                // static fields 
+                result = `\n\t[${currentIndex}] ${flag}${members.fields_name[index]} : ${JSON.stringify(field.value)} | ${field.fieldReturnType}`
             } catch (error) {
-                result = `\n\t[${currentIndex}] ${flag}${members.fields_name[index]} : ${field.fieldReturnType}`
+                // instance fields
+                result = `\n\t[${currentIndex}] ${flag}${members.fields_name[index]} : ${JSON.stringify(field)}`
             }
             return result
         }).forEach(LOGD)

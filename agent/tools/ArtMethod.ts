@@ -60,10 +60,11 @@ export class ArtMethod {
         const quickCode: NativePointer = this.handle.add(getArtMethodSpec().offset.quickCode).readPointer()
         const jniCode: NativePointer = this.handle.add(getArtMethodSpec().offset.jniCode).readPointer()
         const size: number = getArtMethodSpec().size
-        const jniCodeMd: Module = Process.findModuleByAddress(jniCode)
-        const jniCodeStr: string = jniCodeMd == null ? jniCode.toString() : `${jniCode} -> ${jniCode.sub(jniCodeMd.base)} @ ${jniCodeMd.name}`
+        const debugInfo_jniCode = DebugSymbol.fromAddress(jniCode)
+        let jniCodeStr: string = jniCode.isNull() ? "null" : `${jniCode} -> ${debugInfo_jniCode.name} @ ${debugInfo_jniCode.moduleName}`
         // const interpreterCode = this.handle.add(getArtMethodSpec().offset.interpreterCode).readPointer()
-        return `quickCode: ${quickCode} | jniCode: ${jniCodeStr} | accessFlags: ${accessFlags} | size: ${size}\n`
+        const debugInfo_quickCode = DebugSymbol.fromAddress(quickCode)
+        return `quickCode: ${quickCode} -> ${debugInfo_quickCode.name} @ ${debugInfo_quickCode.moduleName} | jniCode: ${jniCodeStr} | accessFlags: ${accessFlags} | size: ${size}\n`
         // return `${this.prettyMethod()} quickCode: ${quickCode} jniCode: ${jniCodeStr} interpreterCode: ${interpreterCode}\n`
     }
 
