@@ -1,5 +1,5 @@
 // jetbrains://clion/navigate/reference?project=libart&path=~/bin/aosp/art/libdexfile/dex/modifiers.h
-export class art_modifiers {
+export class ArtModifiers {
 
     static kAccPublic = 0x0001;  // class, field, method, ic
     static kAccPrivate = 0x0002;  // field, method, ic
@@ -42,8 +42,47 @@ export class art_modifiers {
 
     // ...
 
+    public static PrettyAccessFlags = (access_flags: NativePointer | number): string => {
+        let access_flags_local: NativePointer = NULL
+        if (typeof access_flags === "number") {
+            access_flags_local = ptr(access_flags)
+        } else {
+            access_flags_local = access_flags
+        }
+        if (access_flags_local.isNull()) throw new Error("access_flags is null")
+        let result: string = ""
+        if (!(access_flags_local.and(ArtModifiers.kAccPublic)).isNull()) {
+            result += "public "
+        }
+        if (!(access_flags_local.and(ArtModifiers.kAccProtected)).isNull()) {
+            result += "protected "
+        }
+        if (!(access_flags_local.and(ArtModifiers.kAccPrivate)).isNull()) {
+            result += "private "
+        }
+        if (!(access_flags_local.and(ArtModifiers.kAccFinal)).isNull()) {
+            result += "final "
+        }
+        if (!(access_flags_local.and(ArtModifiers.kAccStatic)).isNull()) {
+            result += "static "
+        }
+        if (!(access_flags_local.and(ArtModifiers.kAccAbstract)).isNull()) {
+            result += "abstract "
+        }
+        if (!(access_flags_local.and(ArtModifiers.kAccInterface)).isNull()) {
+            result += "interface "
+        }
+        if (!(access_flags_local.and(ArtModifiers.kAccTransient)).isNull()) {
+            result += "transient "
+        }
+        if (!(access_flags_local.and(ArtModifiers.kAccVolatile)).isNull()) {
+            result += "volatile "
+        }
+        if (!(access_flags_local.and(ArtModifiers.kAccSynchronized)).isNull()) {
+            result += "synchronized "
+        }
+        return result
+    }
 }
 
-declare global {
-    var art_modifiers: any
-}
+globalThis.PrettyAccessFlags = (access_flags: NativePointer | number) => ArtModifiers.PrettyAccessFlags(access_flags)

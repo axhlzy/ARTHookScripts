@@ -1,5 +1,5 @@
 
-import { art_modifiers } from '../tools/modifiers'
+import { ArtModifiers } from '../tools/modifiers'
 import { parseInstructionsAt } from './machine-code'
 
 const jsizeSize = 4
@@ -462,48 +462,6 @@ export function getArtMethodSpec(): ArtMethodSpec {
     return spec
 }
 
-globalThis.PrettyJavaAccessFlags = (access_flags: NativePointer | number) => {
-    let access_flags_local = NULL
-    if (typeof access_flags === "number") {
-        access_flags_local = ptr(access_flags)
-    } else {
-        access_flags_local = access_flags
-    }
-    if (access_flags_local.isNull()) throw new Error("access_flags is null")
-    let result: string = ""
-    if (!(access_flags_local.and(art_modifiers.kAccPublic)).isNull()) {
-        result += "public "
-    }
-    if (!(access_flags_local.and(art_modifiers.kAccProtected)).isNull()) {
-        result += "protected "
-    }
-    if (!(access_flags_local.and(art_modifiers.kAccPrivate)).isNull()) {
-        result += "private "
-    }
-    if (!(access_flags_local.and(art_modifiers.kAccFinal)).isNull()) {
-        result += "final "
-    }
-    if (!(access_flags_local.and(art_modifiers.kAccStatic)).isNull()) {
-        result += "static "
-    }
-    if (!(access_flags_local.and(art_modifiers.kAccAbstract)).isNull()) {
-        result += "abstract "
-    }
-    if (!(access_flags_local.and(art_modifiers.kAccInterface)).isNull()) {
-        result += "interface "
-    }
-    if (!(access_flags_local.and(art_modifiers.kAccTransient)).isNull()) {
-        result += "transient "
-    }
-    if (!(access_flags_local.and(art_modifiers.kAccVolatile)).isNull()) {
-        result += "volatile "
-    }
-    if (!(access_flags_local.and(art_modifiers.kAccSynchronized)).isNull()) {
-        result += "synchronized "
-    }
-    return result
-}
-
 globalThis.getArtFieldSpec = (handle: NativePointer) => {
     return {
         declaringClass: handle.add(0).readPointer(),
@@ -520,7 +478,7 @@ declare global {
     var getAndroidApiLevel: () => number
     var getAndroidCodename: () => string
 
-    var PrettyJavaAccessFlags: (access_flags: NativePointer | number) => string
+    var PrettyAccessFlags: (access_flags: NativePointer | number) => string
 }
 
 globalThis.getArtMethodSpec = getArtMethodSpec

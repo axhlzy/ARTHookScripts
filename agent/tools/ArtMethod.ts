@@ -1,7 +1,12 @@
+import { BaseClass } from "./BaseClass"
+import { DexFile } from "./DexFile"
+import { GcRoot } from "./GcRoot"
+import { MirrorClass } from "./Mirror/MirrorClass"
 import { OatQuickMethodHeader } from "./OatQuickMethodHeader"
 import { ObjPtr } from "./ObjPtr"
 import { StdString } from "./StdString"
 import { InvokeType } from "./enum"
+import { ArtModifiers } from "./modifiers"
 
 // export var quickCodeOffset: number = null
 // export var jniCodeOffset: number = null
@@ -37,6 +42,83 @@ export class ArtMethod {
         this.handle = handle
     }
 
+    // GcRoot<mirror::Class> declaring_class_;
+    get declaring_class(): GcRoot<MirrorClass> {
+        return new GcRoot((handle) => new MirrorClass(handle), this.handle)
+    }
+
+    // std::atomic<std::uint32_t> access_flags_;
+    get access_flags(): number {
+        return this.handle.add(0x4).readU32()
+    }
+
+    get access_flags_string(): string {
+        return ArtModifiers.PrettyAccessFlags(this.access_flags)
+    }
+
+    // uint32_t dex_code_item_offset_;
+    get dex_code_item_offset(): number {
+        return this.handle.add(0x4 * 2).readU32()
+    }
+
+    // uint32_t dex_method_index_;
+    get dex_method_index(): number {
+        return this.handle.add(0x4 * 3).readU32()
+    }
+
+    // uint16_t method_index_;
+    get method_index(): number {
+        return this.handle.add(0x4 * 4).readU16()
+    }
+
+    // union {
+    //     // Non-abstract methods: The hotness we measure for this method. Not atomic,
+    //     // as we allow missing increments: if the method is hot, we will see it eventually.
+    //     uint16_t hotness_count_;
+    //     // Abstract methods: IMT index (bitwise negated) or zero if it was not cached.
+    //     // The negation is needed to distinguish zero index and missing cached entry.
+    //     uint16_t imt_index_;
+    //   };
+    get hotness_count(): number {
+        return this.handle.add(0x4 * 4 + 0x2).readU16()
+    }
+
+    get imt_index(): number {
+        return this.handle.add(0x4 * 4 + 0x2).readU16()
+    }
+
+    // Must be the last fields in the method.
+    //   struct PtrSizedFields {
+    //     // Depending on the method type, the data is
+    //     //   - native method: pointer to the JNI function registered to this method
+    //     //                    or a function to resolve the JNI function,
+    //     //   - conflict method: ImtConflictTable,
+    //     //   - abstract/interface method: the single-implementation if any,
+    //     //   - proxy method: the original interface method or constructor,
+    //     //   - other methods: the profiling data.
+    //     void* data_;
+
+    //     // Method dispatch from quick compiled code invokes this pointer which may cause bridging into
+    //     // the interpreter.
+    //     void* entry_point_from_quick_compiled_code_;
+    //   } ptr_sized_fields_;
+
+    get data(): NativePointer {
+        return this.handle.add(0x4 * 5 + 0x2 * 2).readPointer()
+    }
+
+    get entry_point_from_quick_compiled_code(): NativePointer {
+        return this.handle.add(0x4 * 5 + 0x2 * 2 + BaseClass.PointerSize).readPointer()
+    }
+
+    // uint32_t GetCodeItemOffset() 
+    GetCodeItemOffset(): number {
+        return this.dex_code_item_offset
+    }
+
+    // _ZN3art9ArtMethod12PrettyMethodEb => art::ArtMethod::PrettyMethod(bool)
+    // _ZN3art9ArtMethod12PrettyMethodEPS0_b => art::ArtMethod::PrettyMethod(art::ArtMethod*, bool)
+    // _ZNK3art7DexFile12PrettyMethodEjb => art::DexFile::PrettyMethod(unsigned int, bool) const
     prettyMethod(withSignature = true): string {
         const result = new StdString();
         (Java as any).api['art::ArtMethod::PrettyMethod'](result, this.handle, withSignature ? 1 : 0)
@@ -44,7 +126,7 @@ export class ArtMethod {
     }
 
     toString(): string {
-        const PrettyJavaAccessFlagsStr = PrettyJavaAccessFlags(ptr(this.handle.add(getArtMethodSpec().offset.accessFlags).readU32()))
+        const PrettyJavaAccessFlagsStr: string = PrettyAccessFlags(ptr(this.handle.add(getArtMethodSpec().offset.accessFlags).readU32()))
         return `${this.handle} -> ${PrettyJavaAccessFlagsStr}${this.prettyMethod()}`
     }
 
@@ -64,7 +146,7 @@ export class ArtMethod {
         let jniCodeStr: string = jniCode.isNull() ? "null" : `${jniCode} -> ${debugInfo_jniCode.name} @ ${debugInfo_jniCode.moduleName}`
         // const interpreterCode = this.handle.add(getArtMethodSpec().offset.interpreterCode).readPointer()
         const debugInfo_quickCode = DebugSymbol.fromAddress(quickCode)
-        return `quickCode: ${quickCode} -> ${debugInfo_quickCode.name} @ ${debugInfo_quickCode.moduleName} | jniCode: ${jniCodeStr} | accessFlags: ${accessFlags} | size: ${size}\n`
+        return `quickCode: ${quickCode} -> ${debugInfo_quickCode.name} @ ${debugInfo_quickCode.moduleName} | jniCode: ${jniCodeStr} | accessFlags: ${accessFlags} | size: ${ptr(size)}\n`
         // return `${this.prettyMethod()} quickCode: ${quickCode} jniCode: ${jniCodeStr} interpreterCode: ${interpreterCode}\n`
     }
 
@@ -82,12 +164,39 @@ export class ArtMethod {
     // ObjPtr<mirror::DexCache> ArtMethod::GetObsoleteDexCache()
     // _ZN3art9ArtMethod19GetObsoleteDexCacheEv
     // __int64 __fastcall art::ArtMethod::GetObsoleteDexCache(art::ArtMethod *this, art::mirror::Object *a2)
-    GetObsoleteDexCache(): ObjPtr {
+    private GetObsoleteDexCache(): NativePointer {
         const GetObsoleteDexCacheAddr = Module.findExportByName("libart.so", "_ZN3art9ArtMethod19GetObsoleteDexCacheEv")
         const GetObsoleteDexCacheFunc = new NativeFunction(GetObsoleteDexCacheAddr, 'pointer', ['pointer'])
         const ret: NativePointer = GetObsoleteDexCacheFunc(this.handle) as NativePointer
         if (ret.isNull()) return null
-        return new ObjPtr(ret)
+        return new ObjPtr(ret).handle
+    }
+
+    // inline ObjPtr<mirror::DexCache> ArtMethod::GetDexCache()
+    // bool IsObsolete() => return (GetAccessFlags() & kAccObsoleteMethod) != 0;
+    GetDexFile(): DexFile {
+        let access_flags = this.handle.add(0x4).readU32()
+        // IsObsolete() => (GetAccessFlags() & kAccObsoleteMethod) != 0
+        if ((access_flags & ArtModifiers.kAccObsoleteMethod) != 0) {
+            // LOGD(`flag => ${access_flags}`)
+            return new DexFile(this.GetObsoleteDexCache())
+        }
+        else {
+            // GcRoot<mirror::Class> declaring_class_
+            // declaring_class_ are 32 bits in both 32 and 64 bit architectures
+            // let declaring_class_ptr = ptr(this.handle.readU32())
+            // LOGD(`declaring_class_ptr: ${declaring_class_ptr}`)
+            // let dex_cache_ptr = ptr(declaring_class_ptr.add(0x10).readU32())
+            // LOGD(`dex_cache_ptr: ${dex_cache_ptr}`)
+            // let dex_file_ptr = dex_cache_ptr.add(0x10).readPointer()
+            // LOGD(`dex_file_ptr: ${dex_file_ptr}`)
+            // const obj = new ObjPtr(dex_file_ptr)
+            // LOGD(`GetDexFile: ${obj.toString()}`)
+            // return obj
+
+            // LOGD(this.declaring_class.root.dex_cache.root)
+            return this.declaring_class.root.dex_cache.root.dex_file
+        }
     }
 
     // bool ArtMethod::HasSameNameAndSignature(ArtMethod* other) 
@@ -235,14 +344,5 @@ export class ArtMethod {
         const GetInvokeTypeFunc = new NativeFunction(GetInvokeTypeAddr, 'int', ['pointer'])
         return InvokeType.toString(GetInvokeTypeFunc(this.handle) as number)
     }
-
-    // inline const DexFile* ArtMethod::GetDexFile()
-    GetDexFile(): NativePointer {
-
-
-        Interceptor.attach
-        return NULL
-    }
-
 
 }
