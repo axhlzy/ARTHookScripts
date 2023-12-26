@@ -182,14 +182,14 @@ export class ArtMethod extends JSHandle implements IArtMethod {
         else {
             // GcRoot<mirror::Class> declaring_class_
             // declaring_class_ are 32 bits in both 32 and 64 bit architectures
-            // let declaring_class_ptr = ptr(this.handle.readU32())
-            // LOGD(`declaring_class_ptr: ${declaring_class_ptr}`)
-            // let dex_cache_ptr = ptr(declaring_class_ptr.add(0x10).readU32())
-            // LOGD(`dex_cache_ptr: ${dex_cache_ptr}`)
-            // let dex_file_ptr = dex_cache_ptr.add(0x10).readPointer()
-            // LOGD(`dex_file_ptr: ${dex_file_ptr}`)
-            // const obj = new ObjPtr(dex_file_ptr)
-            // LOGD(`GetDexFile: ${obj.toString()}`)
+            let declaring_class_ptr = ptr(this.handle.readU32())
+            LOGD(`declaring_class_ptr: ${declaring_class_ptr}`)
+            let dex_cache_ptr = ptr(declaring_class_ptr.add(0x10).readU32())
+            LOGD(`dex_cache_ptr: ${dex_cache_ptr}`)
+            let dex_file_ptr = dex_cache_ptr.add(0x10).readPointer()
+            LOGD(`dex_file_ptr: ${dex_file_ptr}`)
+            const obj = new ObjPtr(dex_file_ptr)
+            LOGD(`GetDexFile: ${obj.toString()}`)
             // return obj
 
             // LOGD(this.declaring_class.root.dex_cache.root)

@@ -15,9 +15,6 @@
     "moduleResolution": "node",
     // "baseUrl": "./",
     // "paths": {
-    //   "fridacontainer/*": [
-    //     "./node_modules/@dmemory/fridacontainer/dist/*"
-    //   ]
     // },
     "skipLibCheck": true,
     "allowSyntheticDefaultImports": true,

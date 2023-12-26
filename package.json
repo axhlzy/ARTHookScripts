@@ -1,22 +1,23 @@
 {
   "name": "frida-art-hook-agent",
   "version": "1.0.0",
-  "description": "Frida agent written in TypeScript",
-  "private": true,
+  "description": "ART Hook Scripts",
+  "private": false,
   "main": "agent/main.ts",
   "scripts": {
     "prepare": "npm run build",
     "build": "frida-compile agent/main.ts -o _agent.js -c",
-    "watch": "frida-compile agent/main.ts -o _agent.js -w"
+    "watch": "frida-compile agent/main.ts -o _agent.js -w",
+    "obfuscator": "javascript-obfuscator _agent.js --compact true --self-defending false --unicode-escape-sequence true"
   },
   "devDependencies": {
     "@types/frida-gum": "^16.2.0",
     "@types/node": "^14.14.10",
-    "frida-compile": "^10.0.0"
+    "frida-compile": "^10.0.0",
+    "javascript-obfuscator": "^4.1.0"
   },
   "dependencies": {
     "crypto-js": "^4.2.0",
-    "log4js": "^6.9.1",
-    "@dmemory/fridacontainer": "latest"
+    "log4js": "^6.9.1"
   }
 }

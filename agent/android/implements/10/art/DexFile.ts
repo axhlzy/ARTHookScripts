@@ -18,6 +18,58 @@ export class DexFile extends JSHandle {
         return disp
     }
 
+    // ALWAYS_INLINE std::string PrettyMethod(uint32_t method_idx, bool with_signature = true) const {
+    //     std::string result;
+    //     AppendPrettyMethod(method_idx, with_signature, &result);
+    //     return result;
+    //   }
+    // _ZNK3art7DexFile12PrettyMethodEjb
+    PrettyMethod(method_idx: number, with_signature: boolean = true): string {
+        const PrettyMethodAddr = Module.findExportByName("libdexfile.so", "_ZNK3art7DexFile12PrettyMethodEjb")!
+        const PrettyMethod = new NativeFunction(PrettyMethodAddr, "pointer", ["pointer", "pointer", "pointer"])
+        return new StdString(PrettyMethod(this.handle, ptr(method_idx), with_signature ? ptr(1) : NULL) as NativePointer).disposeToString()
+    }
+
+    // _ZNK3art7DexFile17CalculateChecksumEv
+    // virtual uint32_t CalculateChecksum() const;
+    CalculateChecksum(): number {
+        const CalculateChecksumAddr = Module.findExportByName("libdexfile.so", "_ZNK3art7DexFile17CalculateChecksumEv")!
+        const CalculateChecksum = new NativeFunction(CalculateChecksumAddr, "uint32", ["pointer"])
+        return CalculateChecksum(this.handle) as number
+    }
+
+    // _ZNK3art7DexFile10IsReadOnlyEv
+    // bool IsReadOnly() const;
+    IsReadOnly(): boolean {
+        const IsReadOnlyAddr = Module.findExportByName("libdexfile.so", "_ZNK3art7DexFile10IsReadOnlyEv")!
+        const IsReadOnly = new NativeFunction(IsReadOnlyAddr, "bool", ["pointer"])
+        return IsReadOnly(this.handle) as boolean
+    }
+
+    // _ZNK3art7DexFile12DisableWriteEv
+    // bool DisableWrite() const;
+    DisableWrite(): boolean {
+        const DisableWriteAddr = Module.findExportByName("libdexfile.so", "_ZNK3art7DexFile12DisableWriteEv")!
+        const DisableWrite = new NativeFunction(DisableWriteAddr, "bool", ["pointer"])
+        return DisableWrite(this.handle) as boolean
+    }
+
+    // _ZNK3art7DexFile11EnableWriteEv
+    // bool EnableWrite() const;
+    EnableWrite(): boolean {
+        const EnableWriteAddr = Module.findExportByName("libdexfile.so", "_ZNK3art7DexFile11EnableWriteEv")!
+        const EnableWrite = new NativeFunction(EnableWriteAddr, "bool", ["pointer"])
+        return EnableWrite(this.handle) as boolean
+    }
+
+    // _ZNK3art7DexFile10PrettyTypeENS_3dex9TypeIndexE
+    // std::string PrettyType(dex::TypeIndex type_idx) const;
+    PrettyType(type_idx: number): string {
+        const PrettyTypeAddr = Module.findExportByName("libdexfile.so", "_ZNK3art7DexFile10PrettyTypeENS_3dex9TypeIndexE")!
+        const PrettyType = new NativeFunction(PrettyTypeAddr, "pointer", ["pointer", "pointer"])
+        return new StdString(PrettyType(this.handle, ptr(type_idx)) as NativePointer).disposeToString()
+    }
+
     // The base address of the memory mapping.
     //   const uint8_t* const begin_;
     get begin(): NativePointer {

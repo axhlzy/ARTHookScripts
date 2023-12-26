@@ -33,3 +33,9 @@ export class StdString {
         return [data, isTiny]
     }
 }
+
+declare global {
+    var StdString: any
+}
+
+globalThis.StdString = StdString
