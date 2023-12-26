@@ -477,8 +477,6 @@ declare global {
     var getAndroidSystemProperty: (name: string) => string
     var getAndroidApiLevel: () => number
     var getAndroidCodename: () => string
-
-    var PrettyAccessFlags: (access_flags: NativePointer | number) => string
 }
 
 globalThis.getArtMethodSpec = getArtMethodSpec

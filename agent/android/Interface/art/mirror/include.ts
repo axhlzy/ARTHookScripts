@@ -1,0 +1,2 @@
+import './HeapReference'
+import './IArtMethod'

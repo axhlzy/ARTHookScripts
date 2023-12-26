@@ -1,9 +1,12 @@
+import { StdString } from "../../../../tools/StdString"
+import { JSHandle } from "../../../JSHandle"
+import { DexFile } from "./DexFile"
 
-import { BaseClass } from "./BaseClass";
-import { DexFile } from "./DexFile";
-import { StdString } from "./StdString";
+export class ArtInstruction extends JSHandle {
 
-export class ArtInstruction extends BaseClass {
+    constructor(handle: NativePointer) {
+        super(handle)
+    }
 
     toString(): String {
         return this.constructor.name
@@ -71,3 +74,9 @@ export class ArtInstruction extends BaseClass {
     }
 
 }
+
+declare global {
+    var ArtInstruction: any
+}
+
+globalThis.ArtInstruction = ArtInstruction

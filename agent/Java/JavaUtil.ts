@@ -1,4 +1,5 @@
-import { ArtMethod } from "../tools/ArtMethod"
+import { ArtMethod } from "../android/implements/10/art/mirror/ArtMethod"
+
 
 // 记录一下当前遍历出来的class便于直接使用index选择
 const ArrayCurrentItems: string[] = []

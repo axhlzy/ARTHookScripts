@@ -1,6 +1,8 @@
-import { BaseClass } from "./BaseClass"
+import { JSHandle } from "../../../JSHandle"
+import { ArtObject } from "../../../Object"
 
-export class GcRoot<T extends BaseClass> extends BaseClass {
+// class GcRoot {}
+export class GcRoot<T extends ArtObject> extends JSHandle {
 
     private lsthandle: NativePointer
     private _factory: (handle: NativePointer) => T

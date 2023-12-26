@@ -1,8 +1,5 @@
-import './android/include'
-import './tools/include'
-import './Java/include'
-import { ArtMethod } from './tools/ArtMethod'
-import { ArtInstruction } from './tools/Instruction'
+import { ArtMethod } from "./android/implements/10/art/mirror/ArtMethod"
+import "./include"
 
 globalThis.testArtMethod = () => {
 
@@ -56,4 +53,3 @@ globalThis.testArtMethod = () => {
 declare global {
     var testArtMethod: () => void
 }
-

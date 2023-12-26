@@ -1,6 +1,10 @@
-import { BaseClass } from "../BaseClass"
+import { JSHandle } from "../../../JSHandle"
 
-export class HeapReference<T> extends BaseClass {
+// References between objects within the managed heap.
+// Similar API to ObjectReference, but not a value type. Supports atomic access.
+// template<class MirrorType>
+// class MANAGED HeapReference {}
+export class HeapReference<T> extends JSHandle {
 
     private lsthandle: NativePointer
     private _factory: (handle: NativePointer) => T

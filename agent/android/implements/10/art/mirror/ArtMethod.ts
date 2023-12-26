@@ -1,12 +1,12 @@
-import { BaseClass } from "./BaseClass"
-import { DexFile } from "./DexFile"
-import { GcRoot } from "./GcRoot"
-import { MirrorClass } from "./Mirror/MirrorClass"
-import { OatQuickMethodHeader } from "./OatQuickMethodHeader"
-import { ObjPtr } from "./ObjPtr"
-import { StdString } from "./StdString"
-import { InvokeType } from "./enum"
-import { ArtModifiers } from "./modifiers"
+import { IArtMethod } from "../../../../Interface/art/mirror/IArtMethod"
+import { OatQuickMethodHeader } from "../OatQuickMethodHeader"
+import { StdString } from "../../../../../tools/StdString"
+import { InvokeType } from "../../../../../tools/enum"
+import { JSHandle } from "../../../../JSHandle"
+import { ArtClass } from "./ArtClass"
+import { DexFile } from "../DexFile"
+import { GcRoot } from "../GcRoot"
+import { ObjPtr } from "../ObjPtr"
 
 // export var quickCodeOffset: number = null
 // export var jniCodeOffset: number = null
@@ -34,17 +34,15 @@ export interface ArtMethodRetArray {
     prettyMethod: string
 }
 
-export class ArtMethod {
-
-    handle: NativePointer
+export class ArtMethod extends JSHandle implements IArtMethod {
 
     constructor(handle: NativePointer) {
-        this.handle = handle
+        super(handle)
     }
 
     // GcRoot<mirror::Class> declaring_class_;
-    get declaring_class(): GcRoot<MirrorClass> {
-        return new GcRoot((handle) => new MirrorClass(handle), this.handle)
+    get declaring_class(): GcRoot<ArtClass> {
+        return new GcRoot((handle) => new ArtClass(handle), this.handle)
     }
 
     // std::atomic<std::uint32_t> access_flags_;
@@ -58,17 +56,17 @@ export class ArtMethod {
 
     // uint32_t dex_code_item_offset_;
     get dex_code_item_offset(): number {
-        return this.handle.add(0x4 * 2).readU32()
+        return this.handle.add(0x8).readU32()
     }
 
-    // uint32_t dex_method_index_;
+    // uint16_t method_index_;
     get dex_method_index(): number {
-        return this.handle.add(0x4 * 3).readU32()
+        return this.handle.add(0xC).readU16()
     }
 
     // uint16_t method_index_;
     get method_index(): number {
-        return this.handle.add(0x4 * 4).readU16()
+        return this.handle.add(0xC).readU16()
     }
 
     // union {
@@ -108,7 +106,7 @@ export class ArtMethod {
     }
 
     get entry_point_from_quick_compiled_code(): NativePointer {
-        return this.handle.add(0x4 * 5 + 0x2 * 2 + BaseClass.PointerSize).readPointer()
+        return this.handle.add(0x4 * 5 + 0x2 * 2 + ArtClass.PointerSize).readPointer()
     }
 
     // uint32_t GetCodeItemOffset() 
@@ -282,6 +280,7 @@ export class ArtMethod {
     // _ZN3art9ArtMethod16GetQuickenedInfoEv
     GetQuickenedInfo(dex_pc: number = 0) {
         const GetQuickenedInfo = Module.findExportByName("libart.so", "_ZN3art9ArtMethod16GetQuickenedInfoEv")
+        if (GetQuickenedInfo == null) return null
         const GetQuickenedInfoFunc = new NativeFunction(GetQuickenedInfo, 'pointer', ['pointer', 'uint64'])
         return GetQuickenedInfoFunc(this.handle, dex_pc)
     }
@@ -346,3 +345,9 @@ export class ArtMethod {
     }
 
 }
+
+declare global {
+    var ArtMethod: any
+}
+
+globalThis.ArtMethod = ArtMethod

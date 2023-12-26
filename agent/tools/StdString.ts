@@ -1,10 +1,10 @@
-const STD_STRING_SIZE = 3 * Process.pointerSize
-
 export class StdString {
+
+    private static STD_STRING_SIZE = 3 * Process.pointerSize
 
     handle: NativePointer
 
-    constructor(mPtr: NativePointer = Memory.alloc(STD_STRING_SIZE)) {
+    constructor(mPtr: NativePointer = Memory.alloc(StdString.STD_STRING_SIZE)) {
         this.handle = mPtr
     }
 

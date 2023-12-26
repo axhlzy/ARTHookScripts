@@ -13,7 +13,7 @@
     "strict": false,
     "removeComments": true,
     "moduleResolution": "node",
-    "baseUrl": "./",
+    // "baseUrl": "./",
     // "paths": {
     //   "fridacontainer/*": [
     //     "./node_modules/@dmemory/fridacontainer/dist/*"
