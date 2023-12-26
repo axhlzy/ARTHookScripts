@@ -1,3 +1,4 @@
 /node_modules/
 _agent.js
 _agent-obfuscated.js
+package-lock.json

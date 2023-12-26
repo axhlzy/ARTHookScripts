@@ -8,11 +8,9 @@ export class StdString {
         this.handle = mPtr
     }
 
-    dispose() {
-        const [data, isTiny] = this._getData();
-        if (!isTiny) {
-            (Java as any).api.$delete(data);
-        }
+    private dispose() {
+        const [data, isTiny] = this._getData()
+        if (!isTiny) (Java as any).api.$delete(data)
     }
 
     disposeToString() {
@@ -26,7 +24,7 @@ export class StdString {
         return data.readUtf8String()
     }
 
-    _getData() {
+    private _getData() {
         const str = this.handle
         const isTiny = (str.readU8() & 1) === 0
         const data = isTiny ? str.add(1) : str.add(2 * Process.pointerSize).readPointer()

@@ -1,6 +1,8 @@
 import { ArtMethod } from "./android/implements/10/art/mirror/ArtMethod"
 import "./include"
 
+var onceFlag: boolean = true
+
 globalThis.testArtMethod = () => {
 
     Java.perform(() => {
@@ -19,32 +21,39 @@ globalThis.testArtMethod = () => {
         LOGD(art_0.toString())
         LOGD(art_0.getInfo())
 
-        const artBase: NativePointer = Module.findBaseAddress("libart.so")!
+        function checkDexFile() {
 
-        const GetObsoleteDexCacheAddr = Module.findExportByName("libart.so", "_ZN3art9ArtMethod19GetObsoleteDexCacheEv")!
-        Interceptor.attach(GetObsoleteDexCacheAddr, {
-            onEnter(args) {
-                LOGW(`onEnter GetObsoleteDexCacheAddr -> ${args[0]} -> ${args[0].readPointer()}`)
-            }, onLeave(retval) {
-                LOGW(`onLeave GetObsoleteDexCacheAddr -> ${retval} -> ${retval.readPointer()}`)
-            }
-        })
+            if (!onceFlag) return
+            onceFlag = false
 
-        const branchAddr = artBase.add(0x16C194)
-        Interceptor.attach(branchAddr, {
-            onEnter(this: InvocationContext, args: InvocationArguments) {
-                const ctx = this.context as Arm64CpuContext
-                const x0 = ctx.x0
-                LOGW(`onEnter branchAddr ${Process.getCurrentThreadId()}-> ${x0} -> ${ptr(x0.readU32())}`)
-            }
-        })
+            const artBase: NativePointer = Module.findBaseAddress("libart.so")!
+
+            const GetObsoleteDexCacheAddr = Module.findExportByName("libart.so", "_ZN3art9ArtMethod19GetObsoleteDexCacheEv")!
+            Interceptor.attach(GetObsoleteDexCacheAddr, {
+                onEnter(args) {
+                    LOGW(`onEnter GetObsoleteDexCacheAddr -> ${args[0]} -> ${args[0].readPointer()}`)
+                }, onLeave(retval) {
+                    LOGW(`onLeave GetObsoleteDexCacheAddr -> ${retval} -> ${retval.readPointer()}`)
+                }
+            })
+
+            const branchAddr = artBase.add(0x16C194)
+            Interceptor.attach(branchAddr, {
+                onEnter(this: InvocationContext, args: InvocationArguments) {
+                    const ctx = this.context as Arm64CpuContext
+                    const x0 = ctx.x0
+                    LOGW(`onEnter branchAddr -> PID:${Process.getCurrentThreadId()}-> ${x0} -> ${ptr(x0.readU32())}`)
+                }
+            })
+        }
+
+        checkDexFile()
 
 
         LOGD(`GetInvokeType -> ${art_0.GetInvokeType()}`)
         LOGD(`GetRuntimeMethodName -> ${art_0.GetRuntimeMethodName()}`)
         LOGD(`dex_code_item_offset_ -> ${art_0.dex_code_item_offset} -> ${ptr(art_0.dex_code_item_offset)}`)
         LOGD(`dex_method_index -> ${ptr(art_0.dex_method_index)}`)
-        LOGD(`Dex_PrettyMethod -> ${art_0.GetDexFile().PrettyMethod(art_0.dex_method_index)}`)
         LOGD(`GetRuntimeMethodName -> ${art_1.GetRuntimeMethodName()}`)
         LOGD(`HasSameNameAndSignature -> ${art_0.HasSameNameAndSignature(art_1)}`)
         LOGD(`access_flags_string -> ${art_0.access_flags_string}`)

@@ -8,46 +8,78 @@ import { DexFile } from "../DexFile"
 import { GcRoot } from "../GcRoot"
 import { ObjPtr } from "../ObjPtr"
 
-// export var quickCodeOffset: number = null
-// export var jniCodeOffset: number = null
-// export var interpreterCode: number = null
-
-// Java.perform(() => {
-//     const artMethodSpec = getArtMethodSpec()
-//     quickCodeOffset = artMethodSpec.offset.quickCode
-//     jniCodeOffset = artMethodSpec.offset.jniCode
-//     interpreterCode = artMethodSpec.offset.interpreterCode
-// })
-
-// declare global {
-//     var quickCodeOffset: number
-//     var jniCodeOffset: number
-//     var interpreterCode: number
-// }
-
-// globalThis.quickCodeOffset = quickCodeOffset
-// globalThis.jniCodeOffset = jniCodeOffset
-// globalThis.interpreterCode = interpreterCode
-
-export interface ArtMethodRetArray {
-    handle: NativePointer
-    prettyMethod: string
-}
-
 export class ArtMethod extends JSHandle implements IArtMethod {
+
+    // GcRoot<mirror::Class> declaring_class_; 
+    declaring_class_: NativePointer
+    // std::atomic<std::uint32_t> access_flags_;
+    access_flags_: NativePointer
+    // uint32_t dex_code_item_offset_;
+    dex_code_item_offset_: NativePointer
+    // uint32_t dex_method_index_;
+    dex_method_index_: NativePointer
+    // uint16_t method_index_;
+    method_index_: NativePointer
+
+    //   union {
+    //     // Non-abstract methods: The hotness we measure for this method. Not atomic,
+    //     // as we allow missing increments: if the method is hot, we will see it eventually.
+    //     uint16_t hotness_count_;
+    //     // Abstract methods: IMT index (bitwise negated) or zero if it was not cached.
+    //     // The negation is needed to distinguish zero index and missing cached entry.
+    //     uint16_t imt_index_;
+    //   };
+    hotness_count_: NativePointer
+    imt_index_: NativePointer
+
+    // Must be the last fields in the method.
+    //   struct PtrSizedFields {
+    //     // Depending on the method type, the data is
+    //     //   - native method: pointer to the JNI function registered to this method
+    //     //                    or a function to resolve the JNI function,
+    //     //   - conflict method: ImtConflictTable,
+    //     //   - abstract/interface method: the single-implementation if any,
+    //     //   - proxy method: the original interface method or constructor,
+    //     //   - other methods: the profiling data.
+    //     void* data_;
+
+    //     // Method dispatch from quick compiled code invokes this pointer which may cause bridging into
+    //     // the interpreter.
+    //     void* entry_point_from_quick_compiled_code_;
+    //   } ptr_sized_fields_;
+
+    ptr_sized_fields_: {
+        data_: NativePointer
+        entry_point_from_quick_compiled_code_: NativePointer
+    }
 
     constructor(handle: NativePointer) {
         super(handle)
+        this.declaring_class_ = this.handle // 0x4
+        this.access_flags_ = this.handle.add(getArtMethodSpec().offset.accessFlags)   // 0x4
+        this.dex_code_item_offset_ = this.handle.add(0x4 + 0x4) // 0x4
+        this.dex_method_index_ = this.handle.add(0x4 + 0x4 + 0x4) // 0x4
+        this.method_index_ = this.handle.add(0x4 + 0x4 + 0x4 + 0x4) // 0x2
+        this.hotness_count_ = this.handle.add(0x4 + 0x4 + 0x4 + 0x4 + 0x2)  // 0x2
+        this.imt_index_ = this.hotness_count_  // 0x2
+        this.ptr_sized_fields_ = {
+            data_: this.handle.add(getArtMethodSpec().offset.jniCode),
+            entry_point_from_quick_compiled_code_: this.handle.add(getArtMethodSpec().offset.quickCode)
+        }
+    }
+
+    get SizeOfClass(): number {
+        return getArtMethodSpec().size + super.SizeOfClass
     }
 
     // GcRoot<mirror::Class> declaring_class_;
     get declaring_class(): GcRoot<ArtClass> {
-        return new GcRoot((handle) => new ArtClass(handle), this.handle)
+        return new GcRoot((handle) => new ArtClass(handle), this.declaring_class_.readPointer())
     }
 
     // std::atomic<std::uint32_t> access_flags_;
-    get access_flags(): number {
-        return this.handle.add(0x4).readU32()
+    get access_flags(): NativePointer {
+        return ptr(this.access_flags_.readU32())
     }
 
     get access_flags_string(): string {
@@ -56,17 +88,17 @@ export class ArtMethod extends JSHandle implements IArtMethod {
 
     // uint32_t dex_code_item_offset_;
     get dex_code_item_offset(): number {
-        return this.handle.add(0x8).readU32()
+        return this.dex_code_item_offset_.readU32()
     }
 
     // uint16_t method_index_;
     get dex_method_index(): number {
-        return this.handle.add(0xC).readU16()
+        return this.dex_method_index_.readU32()
     }
 
     // uint16_t method_index_;
     get method_index(): number {
-        return this.handle.add(0xC).readU16()
+        return this.method_index_.readU16()
     }
 
     // union {
@@ -78,11 +110,11 @@ export class ArtMethod extends JSHandle implements IArtMethod {
     //     uint16_t imt_index_;
     //   };
     get hotness_count(): number {
-        return this.handle.add(0x4 * 4 + 0x2).readU16()
+        return this.hotness_count_.readU16()
     }
 
     get imt_index(): number {
-        return this.handle.add(0x4 * 4 + 0x2).readU16()
+        return this.imt_index_.readU16()
     }
 
     // Must be the last fields in the method.
@@ -102,16 +134,11 @@ export class ArtMethod extends JSHandle implements IArtMethod {
     //   } ptr_sized_fields_;
 
     get data(): NativePointer {
-        return this.handle.add(0x4 * 5 + 0x2 * 2).readPointer()
+        return this.ptr_sized_fields_.data_.readPointer()
     }
 
     get entry_point_from_quick_compiled_code(): NativePointer {
-        return this.handle.add(0x4 * 5 + 0x2 * 2 + ArtClass.PointerSize).readPointer()
-    }
-
-    // uint32_t GetCodeItemOffset() 
-    GetCodeItemOffset(): number {
-        return this.dex_code_item_offset
+        return this.ptr_sized_fields_.entry_point_from_quick_compiled_code_.readPointer()
     }
 
     // _ZN3art9ArtMethod12PrettyMethodEb => art::ArtMethod::PrettyMethod(bool)
@@ -120,7 +147,7 @@ export class ArtMethod extends JSHandle implements IArtMethod {
     prettyMethod(withSignature = true): string {
         const result = new StdString();
         (Java as any).api['art::ArtMethod::PrettyMethod'](result, this.handle, withSignature ? 1 : 0)
-        return result.disposeToString()
+        return result.toString()
     }
 
     toString(): string {
@@ -128,23 +155,14 @@ export class ArtMethod extends JSHandle implements IArtMethod {
         return `${this.handle} -> ${PrettyJavaAccessFlagsStr}${this.prettyMethod()}`
     }
 
-    toArray(): ArtMethodRetArray {
-        return {
-            handle: this.handle,
-            prettyMethod: this.prettyMethod()
-        }
-    }
-
     getInfo(): string {
-        const accessFlags: NativePointerValue = ptr(this.handle.add(getArtMethodSpec().offset.accessFlags).readU32())
-        const quickCode: NativePointer = this.handle.add(getArtMethodSpec().offset.quickCode).readPointer()
-        const jniCode: NativePointer = this.handle.add(getArtMethodSpec().offset.jniCode).readPointer()
-        const size: number = getArtMethodSpec().size
+        const quickCode: NativePointer = this.entry_point_from_quick_compiled_code
+        const jniCode: NativePointer = this.data
         const debugInfo_jniCode = DebugSymbol.fromAddress(jniCode)
         let jniCodeStr: string = jniCode.isNull() ? "null" : `${jniCode} -> ${debugInfo_jniCode.name} @ ${debugInfo_jniCode.moduleName}`
         // const interpreterCode = this.handle.add(getArtMethodSpec().offset.interpreterCode).readPointer()
         const debugInfo_quickCode = DebugSymbol.fromAddress(quickCode)
-        return `quickCode: ${quickCode} -> ${debugInfo_quickCode.name} @ ${debugInfo_quickCode.moduleName} | jniCode: ${jniCodeStr} | accessFlags: ${accessFlags} | size: ${ptr(size)}\n`
+        return `quickCode: ${quickCode} -> ${debugInfo_quickCode.name} @ ${debugInfo_quickCode.moduleName} | jniCode: ${jniCodeStr} | accessFlags: ${this.access_flags} | size: ${ptr(this.SizeOfClass)}\n`
         // return `${this.prettyMethod()} quickCode: ${quickCode} jniCode: ${jniCodeStr} interpreterCode: ${interpreterCode}\n`
     }
 
@@ -192,7 +210,9 @@ export class ArtMethod extends JSHandle implements IArtMethod {
             LOGD(`GetDexFile: ${obj.toString()}`)
             // return obj
 
-            // LOGD(this.declaring_class.root.dex_cache.root)
+            LOGD(this.declaring_class.root.dex_cache.root)
+            LOGD(this.declaring_class.root.dex_cache.root.dex_file)
+            LOGD(this.declaring_class.root.dex_cache.root.dex_file.handle)
             return this.declaring_class.root.dex_cache.root.dex_file
         }
     }
