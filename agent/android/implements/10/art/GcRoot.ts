@@ -4,6 +4,8 @@ import { ArtObject } from "../../../Object"
 // class GcRoot {}
 export class GcRoot<T extends ArtObject> extends JSHandle {
 
+    public static readonly Size: number = 0x4
+
     private lsthandle: NativePointer
     private _factory: (handle: NativePointer) => T
 

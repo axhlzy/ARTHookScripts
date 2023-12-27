@@ -1,3 +1,4 @@
+import { DexFile } from "../_agent"
 import { ArtMethod } from "./android/implements/10/art/mirror/ArtMethod"
 import "./include"
 
@@ -49,7 +50,6 @@ globalThis.testArtMethod = () => {
 
         checkDexFile()
 
-
         LOGD(`GetInvokeType -> ${art_0.GetInvokeType()}`)
         LOGD(`GetRuntimeMethodName -> ${art_0.GetRuntimeMethodName()}`)
         LOGD(`dex_code_item_offset_ -> ${art_0.dex_code_item_offset} -> ${ptr(art_0.dex_code_item_offset)}`)
@@ -63,7 +63,9 @@ globalThis.testArtMethod = () => {
         newLine()
 
         LOGD(`GetDexFile -> ${art_0.GetDexFile()}`)
-        LOGD(`GetDexFile -> ${art_0.GetDexFile().begin.add(art_0.dex_code_item_offset)}`)
+        let dex_off: number = art_0.dex_code_item_offset
+        let dex_file = art_0.GetDexFile()
+        LOGD(dex_file.data_begin.add(dex_off))
 
         // ArtInstruction.kInstructionNames.forEach((name, index) => {
         //     LOGD(`${index} -> ${name}`)

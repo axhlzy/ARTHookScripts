@@ -1,3 +1,7 @@
+# 当前测试环境
+Pixel XL 
+android-10 (aosp)
+BUILD_ID=QP1A.191005.007.A3
 
 # 期望目标
 

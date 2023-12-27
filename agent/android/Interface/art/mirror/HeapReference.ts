@@ -6,6 +6,8 @@ import { JSHandle } from "../../../JSHandle"
 // class MANAGED HeapReference {}
 export class HeapReference<T extends JSHandle | NativePointer | Object> extends JSHandle {
 
+    public static readonly Size: number = 0x4
+
     private _factory: (handle: NativePointer) => T
 
     constructor(factory: (handle: NativePointer) => T, handle: NativePointer) {

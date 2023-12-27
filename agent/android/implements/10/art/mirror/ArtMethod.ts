@@ -8,18 +8,18 @@ import { DexFile } from "../DexFile"
 import { GcRoot } from "../GcRoot"
 import { ObjPtr } from "../ObjPtr"
 
-export class ArtMethod extends JSHandle implements IArtMethod {
+export class ArtMethod extends JSHandle implements IArtMethod, SizeOfClass {
 
     // GcRoot<mirror::Class> declaring_class_; 
-    declaring_class_: NativePointer
+    declaring_class_: NativePointer = this.CurrentHandle // 0x4
     // std::atomic<std::uint32_t> access_flags_;
-    access_flags_: NativePointer
+    access_flags_: NativePointer = this.CurrentHandle.add(GcRoot.Size)   // 0x4
     // uint32_t dex_code_item_offset_;
-    dex_code_item_offset_: NativePointer
+    dex_code_item_offset_: NativePointer = this.CurrentHandle.add(GcRoot.Size + 0x4) // 0x4
     // uint32_t dex_method_index_;
-    dex_method_index_: NativePointer
+    dex_method_index_: NativePointer = this.CurrentHandle.add(GcRoot.Size + 0x4 * 2) // 0x4
     // uint16_t method_index_;
-    method_index_: NativePointer
+    method_index_: NativePointer = this.CurrentHandle.add(GcRoot.Size + 0x4 * 3) // 0x2
 
     //   union {
     //     // Non-abstract methods: The hotness we measure for this method. Not atomic,
@@ -29,8 +29,8 @@ export class ArtMethod extends JSHandle implements IArtMethod {
     //     // The negation is needed to distinguish zero index and missing cached entry.
     //     uint16_t imt_index_;
     //   };
-    hotness_count_: NativePointer
-    imt_index_: NativePointer
+    hotness_count_: NativePointer = this.CurrentHandle.add(GcRoot.Size + 0x4 * 3 + 0x2 * 1)
+    imt_index_: NativePointer = this.CurrentHandle.add(GcRoot.Size + 0x4 * 3 + 0x2 * 1)
 
     // Must be the last fields in the method.
     //   struct PtrSizedFields {
@@ -55,13 +55,6 @@ export class ArtMethod extends JSHandle implements IArtMethod {
 
     constructor(handle: NativePointer) {
         super(handle)
-        this.declaring_class_ = this.handle // 0x4
-        this.access_flags_ = this.handle.add(getArtMethodSpec().offset.accessFlags)   // 0x4
-        this.dex_code_item_offset_ = this.handle.add(0x4 + 0x4) // 0x4
-        this.dex_method_index_ = this.handle.add(0x4 + 0x4 + 0x4) // 0x4
-        this.method_index_ = this.handle.add(0x4 + 0x4 + 0x4 + 0x4) // 0x2
-        this.hotness_count_ = this.handle.add(0x4 + 0x4 + 0x4 + 0x4 + 0x2)  // 0x2
-        this.imt_index_ = this.hotness_count_  // 0x2
         this.ptr_sized_fields_ = {
             data_: this.handle.add(getArtMethodSpec().offset.jniCode),
             entry_point_from_quick_compiled_code_: this.handle.add(getArtMethodSpec().offset.quickCode)
@@ -72,9 +65,13 @@ export class ArtMethod extends JSHandle implements IArtMethod {
         return getArtMethodSpec().size + super.SizeOfClass
     }
 
+    get currentHandle(): NativePointer {
+        return this.handle.add(super.SizeOfClass)
+    }
+
     // GcRoot<mirror::Class> declaring_class_;
     get declaring_class(): GcRoot<ArtClass> {
-        return new GcRoot((handle) => new ArtClass(handle), this.declaring_class_.readPointer())
+        return new GcRoot((handle) => new ArtClass(handle), this.declaring_class_)
     }
 
     // std::atomic<std::uint32_t> access_flags_;
@@ -200,19 +197,15 @@ export class ArtMethod extends JSHandle implements IArtMethod {
         else {
             // GcRoot<mirror::Class> declaring_class_
             // declaring_class_ are 32 bits in both 32 and 64 bit architectures
-            let declaring_class_ptr = ptr(this.handle.readU32())
-            LOGD(`declaring_class_ptr: ${declaring_class_ptr}`)
-            let dex_cache_ptr = ptr(declaring_class_ptr.add(0x10).readU32())
-            LOGD(`dex_cache_ptr: ${dex_cache_ptr}`)
-            let dex_file_ptr = dex_cache_ptr.add(0x10).readPointer()
-            LOGD(`dex_file_ptr: ${dex_file_ptr}`)
-            const obj = new ObjPtr(dex_file_ptr)
-            LOGD(`GetDexFile: ${obj.toString()}`)
+            // let declaring_class_ptr = ptr(this.handle.readU32())
+            // LOGD(`declaring_class_ptr: ${declaring_class_ptr}`)
+            // let dex_cache_ptr = ptr(declaring_class_ptr.add(0x10).readU32())
+            // LOGD(`dex_cache_ptr: ${dex_cache_ptr}`)
+            // let dex_file_ptr = dex_cache_ptr.add(0x10).readPointer()
+            // LOGD(`dex_file_ptr: ${dex_file_ptr}`)
+            // const obj = new ObjPtr(dex_file_ptr)
+            // LOGD(`GetDexFile: ${obj.toString()}`)
             // return obj
-
-            LOGD(this.declaring_class.root.dex_cache.root)
-            LOGD(this.declaring_class.root.dex_cache.root.dex_file)
-            LOGD(this.declaring_class.root.dex_cache.root.dex_file.handle)
             return this.declaring_class.root.dex_cache.root.dex_file
         }
     }

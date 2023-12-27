@@ -6,105 +6,126 @@ import { ClassExt } from "./ClassExt"
 import { DexCache } from "./DexCache"
 import { IfTable } from "./IfTable"
 
-const HeapReferenceSize: number = PointerSize
+export class ArtClass extends ArtObject implements SizeOfClass {
 
-export class ArtClass extends ArtObject {
+    isVirtualClass: boolean = false
+
+    // HeapReference<ClassLoader> class_loader_;
+    class_loader_ = this.currentHandle
+    // HeapReference<Class> component_type_;
+    component_type_ = this.currentHandle.add(HeapReference.Size * 1)
+    // HeapReference<DexCache> dex_cache_;
+    dex_cache_ = this.currentHandle.add(HeapReference.Size * 2)
+    // HeapReference<ClassExt> ext_data_;
+    ext_data_ = this.currentHandle.add(HeapReference.Size * 3)
+    // HeapReference<IfTable> iftable_;
+    iftable_ = this.currentHandle.add(HeapReference.Size * 4)
+    // HeapReference<String> name_;
+    name_ = this.currentHandle.add(HeapReference.Size * 5)
+    // HeapReference<Class> super_class_;
+    super_class_ = this.currentHandle.add(HeapReference.Size * 6)
+    // HeapReference<PointerArray> vtable_;
+    vtable_ = this.currentHandle.add(HeapReference.Size * 7)
+    // ArtFields are allocated as a length prefixed ArtField array, and not an array of pointers to ArtFields.
+    // uint64_t ifields_; => instance fields
+    ifields_ = this.currentHandle.add(HeapReference.Size * 8)
+    // uint64_t methods_;
+    methods_ = this.currentHandle.add(HeapReference.Size * 8 + 0x8 * 1)
+    // uint64_t sfields_;
+    sfields_ = this.currentHandle.add(HeapReference.Size * 8 + 0x8 * 2)
+    // uint32_t access_flags_;
+    access_flags_ = this.currentHandle.add(HeapReference.Size * 8 + 0x8 * 2 + 0x4 * 1)
+    // uint32_t class_flags_;
+    class_flags_ = this.currentHandle.add(HeapReference.Size * 8 + 0x8 * 2 + 0x4 * 2)
+    // uint32_t class_size_;
+    class_size_ = this.currentHandle.add(HeapReference.Size * 8 + 0x8 * 2 + 0x4 * 3)
+    // pid_t clinit_thread_id_;
+    clinit_thread_id_ = this.currentHandle.add(HeapReference.Size * 8 + 0x8 * 2 + 0x4 * 4)
+    // int32_t dex_class_def_idx_;
+    dex_class_def_idx_ = this.currentHandle.add(HeapReference.Size * 8 + 0x8 * 3 + 0x4 * 4)
 
     constructor(handle: NativePointer) {
         super(handle)
     }
 
     get SizeOfClass(): number {
-        return super.SizeOfClass + HeapReferenceSize * 8 + 64 * 3 + 32 * 5
+        return super.SizeOfClass + (HeapReference.Size * 8 + 64 * 3 + 32 * 5)
+    }
+
+    get currentHandle(): NativePointer {
+        return this.handle.add(super.SizeOfClass)
     }
 
     toString(): String {
         return `ArtClass< ${this.handle} >`
     }
 
-    // HeapReference<ClassLoader> class_loader_;
     get class_loader(): HeapReference<ArtClassLoader> {
-        return new HeapReference((handle) => new ArtClassLoader(handle), this.handle.add(HeapReferenceSize * 0))
+        return new HeapReference((handle) => new ArtClassLoader(handle), this.class_loader_)
     }
 
-    // HeapReference<Class> component_type_;
     get component_type(): HeapReference<ArtClass> {
-        return new HeapReference((handle) => new ArtClass(handle), this.handle.add(HeapReferenceSize * 1))
+        return new HeapReference((handle) => new ArtClass(handle), this.component_type_)
     }
 
-    // HeapReference<DexCache> dex_cache_;
     get dex_cache(): HeapReference<DexCache> {
-        return new HeapReference((handle) => new DexCache(handle), this.handle.add(HeapReferenceSize * 2))
+        return new HeapReference((handle) => new DexCache(handle), this.dex_cache_)
     }
 
-    // HeapReference<ClassExt> ext_data_;
     get ext_data(): HeapReference<ClassExt> {
-        return new HeapReference((handle) => new ClassExt(handle), this.handle.add(HeapReferenceSize * 3))
+        return new HeapReference((handle) => new ClassExt(handle), this.ext_data_)
     }
 
-    // HeapReference<IfTable> iftable_;
     get iftable(): HeapReference<IfTable> {
-        return new HeapReference((handle) => new IfTable(handle), this.handle.add(HeapReferenceSize * 4))
+        return new HeapReference((handle) => new IfTable(handle), this.iftable_)
     }
 
-    // HeapReference<String> name_;
     get name(): HeapReference<StdString> {
-        return new HeapReference((handle) => new StdString(handle), this.handle.add(HeapReferenceSize * 5))
+        return new HeapReference((handle) => new StdString(handle), this.name_)
     }
 
-    // HeapReference<Class> super_class_;
     get super_class(): HeapReference<ArtClass> {
-        return new HeapReference((handle) => new ArtClass(handle), this.handle.add(HeapReferenceSize * 6))
+        return new HeapReference((handle) => new ArtClass(handle), this.super_class_)
     }
 
-    // HeapReference<PointerArray> vtable_;
     get vtable(): HeapReference<NativePointer> {
-        return new HeapReference((handle) => new NativePointer(handle), this.handle.add(HeapReferenceSize * 7))
+        return new HeapReference((handle) => new NativePointer(handle), this.vtable_)
     }
 
-    // ArtFields are allocated as a length prefixed ArtField array, and not an array of pointers to ArtFields.
-    // uint64_t ifields_; => instance fields
     get ifields(): number {
-        return this.handle.add(HeapReferenceSize * 8).readU64().toNumber()
+        return this.ifields_.readU64().toNumber()
     }
 
-    // uint64_t methods_;
     get methods(): number {
-        return this.handle.add(HeapReferenceSize * 8 + 64).readU64().toNumber()
+        return this.methods_.readU64().toNumber()
     }
 
-    // uint64_t sfields_;
     get sfields(): number {
-        return this.handle.add(HeapReferenceSize * 8 + 64 * 2).readU64().toNumber()
+        return this.sfields_.readU64().toNumber()
     }
 
-    // uint32_t access_flags_;
     get access_flags(): number {
-        return this.handle.add(HeapReferenceSize * 8 + 64 * 3).readU32()
+        return this.access_flags_.readU32()
     }
 
     get access_flags_string(): string {
         return PrettyAccessFlags(this.access_flags)
     }
 
-    // uint32_t class_flags_;
     get class_flags(): number {
-        return this.handle.add(HeapReferenceSize * 8 + 64 * 3 + 32).readU32()
+        return this.class_flags_.readU32()
     }
 
-    // uint32_t class_size_;
     get class_size(): number {
-        return this.handle.add(HeapReferenceSize * 8 + 64 * 3 + 32 * 2).readU32()
+        return this.class_size_.readU32()
     }
 
-    // pid_t clinit_thread_id_;
     get clinit_thread_id(): number {
-        return this.handle.add(HeapReferenceSize * 8 + 64 * 3 + 32 * 3).readS32()
+        return this.clinit_thread_id_.readS32()
     }
 
-    // int32_t dex_class_def_idx_;
     get dex_class_def_idx(): number {
-        return this.handle.add(HeapReferenceSize * 8 + 64 * 3 + 32 * 4).readS32()
+        return this.dex_class_def_idx_.readS32()
     }
 
     // todo ...
