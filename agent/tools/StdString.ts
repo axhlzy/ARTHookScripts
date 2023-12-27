@@ -13,6 +13,15 @@ export class StdString {
         if (!isTiny) (Java as any).api.$delete(data)
     }
 
+    static fromPointers(ptrs: NativePointer[]) {
+        if (ptrs.length != 3) return ''
+        const stdString = new StdString()
+        stdString.handle.writePointer(ptrs[0])
+        stdString.handle.add(Process.pointerSize).writePointer(ptrs[1])
+        stdString.handle.add(2 * Process.pointerSize).writePointer(ptrs[2])
+        return stdString.disposeToString()
+    }
+
     disposeToString() {
         const result = this.toString()
         this.dispose()

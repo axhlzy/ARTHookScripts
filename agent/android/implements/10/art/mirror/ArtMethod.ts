@@ -1,3 +1,4 @@
+import { CodeItemInstructionAccessor } from "../CodeItemInstructionAccessor"
 import { IArtMethod } from "../../../../Interface/art/mirror/IArtMethod"
 import { OatQuickMethodHeader } from "../OatQuickMethodHeader"
 import { StdString } from "../../../../../tools/StdString"
@@ -163,6 +164,11 @@ export class ArtMethod extends JSHandle implements IArtMethod, SizeOfClass {
         // return `${this.prettyMethod()} quickCode: ${quickCode} jniCode: ${jniCodeStr} interpreterCode: ${interpreterCode}\n`
     }
 
+    //   ALWAYS_INLINE CodeItemInstructionAccessor DexInstructions()
+    DexInstructions(): CodeItemInstructionAccessor {
+        return CodeItemInstructionAccessor.fromArtMethod(this)
+    }
+
     // // jetbrains://clion/navigate/reference?project=libart&path=~/bin/aosp/art/libdexfile/dex/modifiers.h
     // // std::string PrettyJavaAccessFlags(uint32_t access_flags)
     // // __int64 __usercall art::PrettyJavaAccessFlags@<X0>(__int64 this@<X0>, _QWORD *a2@<X8>)
@@ -183,6 +189,12 @@ export class ArtMethod extends JSHandle implements IArtMethod, SizeOfClass {
         const ret: NativePointer = GetObsoleteDexCacheFunc(this.handle) as NativePointer
         if (ret.isNull()) return null
         return new ObjPtr(ret).handle
+    }
+
+    GetCodeItem(): NativePointer {
+        const dexCodeItemOffset = this.dex_code_item_offset
+        const dexFile = this.GetDexFile()
+        return dexFile.data_begin.add(dexCodeItemOffset)
     }
 
     // inline ObjPtr<mirror::DexCache> ArtMethod::GetDexCache()
@@ -358,9 +370,3 @@ export class ArtMethod extends JSHandle implements IArtMethod, SizeOfClass {
     }
 
 }
-
-declare global {
-    var ArtMethod: any
-}
-
-globalThis.ArtMethod = ArtMethod

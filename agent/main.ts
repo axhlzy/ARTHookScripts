@@ -1,4 +1,4 @@
-import { DexFile } from "../_agent"
+import { DexFile_CodeItem } from "./android/implements/10/art/DexFile"
 import { ArtMethod } from "./android/implements/10/art/mirror/ArtMethod"
 import "./include"
 
@@ -8,6 +8,7 @@ globalThis.testArtMethod = () => {
 
     Java.perform(() => {
 
+        // let artMethod_0: NativePointer = Java.use("com.unity3d.player.UnityPlayer").checkResumePlayer.handle
         let artMethod_0: NativePointer = Java.use("com.unity3d.player.UnityPlayer").UnitySendMessage.handle
         // let artMethod_0: NativePointer = Java.use("com.unity3d.player.Camera2Wrapper").deinitCamera2Jni.handle
         let artMethod_1: NativePointer = Java.use("com.unity3d.player.UnityPlayer").IsWindowTranslucent.handle
@@ -48,7 +49,7 @@ globalThis.testArtMethod = () => {
             })
         }
 
-        checkDexFile()
+        // checkDexFile()
 
         LOGD(`GetInvokeType -> ${art_0.GetInvokeType()}`)
         LOGD(`GetRuntimeMethodName -> ${art_0.GetRuntimeMethodName()}`)
@@ -65,19 +66,25 @@ globalThis.testArtMethod = () => {
         LOGD(`GetDexFile -> ${art_0.GetDexFile()}`)
         let dex_off: number = art_0.dex_code_item_offset
         let dex_file = art_0.GetDexFile()
-        LOGD(dex_file.data_begin.add(dex_off))
+        let dex_ins_ptr = dex_file.data_begin.add(dex_off)
+        LOGD(`dex_ins_ptr -> ${dex_ins_ptr}`)
 
-        // ArtInstruction.kInstructionNames.forEach((name, index) => {
-        //     LOGD(`${index} -> ${name}`)
+        // ArtInstruction.kInstructionDescriptors.forEach((descriptor, index) => {
+        //     LOGD(`${index} -> ${descriptor}`)
         // })
 
-        // art.RegisterNativeJS((args: NativePointer[]) => {
-        //     LOGE(`called RegisterNativeJS: ${args}`)
-        //     return NULL
-        // })
+        const accessor = art_0.DexInstructions()
+        LOGD(`accessor -> ${accessor}`)
+        let insns = accessor.InstructionAt()
 
-
-        // Java.use("com.unity3d.player.UnityPlayer").UnitySendMessage("1", "2", "3")
+        let offset: number = 0
+        for (let i = 0; i < 100; i++) {
+            const disp = `${insns.handle} | ${insns.dumpHexLE()} | ${insns.dumpString(dex_file)}`
+            LOGD(`${ptr(offset).toString().padEnd(4, ' ')} ${disp}`)
+            if (offset > (accessor.insns_size_in_code_units * 0x2 + (dex_file.is_compact_dex ? DexFile_CodeItem.Compact_InsnsOffset : DexFile_CodeItem.Standard_InsnsOffset))) break
+            offset += insns.SizeInCodeUnits
+            insns = insns.Next()
+        }
 
     })
 
