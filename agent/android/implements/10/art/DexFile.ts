@@ -8,6 +8,9 @@ export class DexFile extends JSHandle {
     public static readonly Standard_InsnsOffset: number = 0x2 * 4 + 0x4 * 2
     public static readonly Compact_InsnsOffset: number = 0x2 * 4 + 0x4 * 1
 
+    // v_table
+    v_table = this.handle
+
     // The base address of the data section (same as Begin() for standard dex).
     //   const uint8_t* const data_begin_;
     begin_ = this.currentHandle
@@ -120,49 +123,59 @@ export class DexFile extends JSHandle {
     //   }
     // _ZNK3art7DexFile12PrettyMethodEjb
     PrettyMethod(method_idx: number, with_signature: boolean = true): string {
-        const PrettyMethodAddr = Module.findExportByName("libdexfile.so", "_ZNK3art7DexFile12PrettyMethodEjb")!
-        const PrettyMethod = new NativeFunction(PrettyMethodAddr, "pointer", ["pointer", "pointer", "pointer"])
-        return new StdString(PrettyMethod(this.handle, ptr(method_idx), with_signature ? ptr(1) : NULL) as NativePointer).disposeToString()
+        // const PrettyMethodAddr = Module.findExportByName("libdexfile.so", "_ZNK3art7DexFile12PrettyMethodEjb")!
+        // const PrettyMethod = new NativeFunction(PrettyMethodAddr, "pointer", ["pointer", "pointer", "pointer"])
+        // return new StdString(PrettyMethod(this.handle, ptr(method_idx), with_signature ? ptr(1) : NULL) as NativePointer).disposeToString()
+        return new StdString(callSym<NativePointer>(
+            "_ZNK3art7DexFile12PrettyMethodEjb", "libdexfile.so",
+            "pointer", ["pointer", "pointer", "pointer"],
+            this.handle, ptr(method_idx), with_signature ? ptr(1) : NULL)
+        ).disposeToString()
     }
 
     // _ZNK3art7DexFile17CalculateChecksumEv
     // virtual uint32_t CalculateChecksum() const;
     CalculateChecksum(): number {
-        const CalculateChecksumAddr = Module.findExportByName("libdexfile.so", "_ZNK3art7DexFile17CalculateChecksumEv")!
-        const CalculateChecksum = new NativeFunction(CalculateChecksumAddr, "uint32", ["pointer"])
-        return CalculateChecksum(this.handle) as number
+        return callSym<number>(
+            "_ZNK3art7DexFile17CalculateChecksumEv", "libdexfile.so",
+            "uint32", ["pointer"],
+            this.handle)
     }
 
     // _ZNK3art7DexFile10IsReadOnlyEv
     // bool IsReadOnly() const;
     IsReadOnly(): boolean {
-        const IsReadOnlyAddr = Module.findExportByName("libdexfile.so", "_ZNK3art7DexFile10IsReadOnlyEv")!
-        const IsReadOnly = new NativeFunction(IsReadOnlyAddr, "bool", ["pointer"])
-        return IsReadOnly(this.handle) as boolean
+        return callSym<boolean>(
+            "_ZNK3art7DexFile10IsReadOnlyEv", "libdexfile.so",
+            "bool", ["pointer"],
+            this.handle)
     }
 
     // _ZNK3art7DexFile12DisableWriteEv
     // bool DisableWrite() const;
     DisableWrite(): boolean {
-        const DisableWriteAddr = Module.findExportByName("libdexfile.so", "_ZNK3art7DexFile12DisableWriteEv")!
-        const DisableWrite = new NativeFunction(DisableWriteAddr, "bool", ["pointer"])
-        return DisableWrite(this.handle) as boolean
+        return callSym<boolean>(
+            "_ZNK3art7DexFile12DisableWriteEv", "libdexfile.so",
+            "bool", ["pointer"],
+            this.handle)
     }
 
     // _ZNK3art7DexFile11EnableWriteEv
     // bool EnableWrite() const;
     EnableWrite(): boolean {
-        const EnableWriteAddr = Module.findExportByName("libdexfile.so", "_ZNK3art7DexFile11EnableWriteEv")!
-        const EnableWrite = new NativeFunction(EnableWriteAddr, "bool", ["pointer"])
-        return EnableWrite(this.handle) as boolean
+        return callSym<boolean>(
+            "_ZNK3art7DexFile11EnableWriteEv", "libdexfile.so",
+            "bool", ["pointer"],
+            this.handle)
     }
 
     // _ZNK3art7DexFile10PrettyTypeENS_3dex9TypeIndexE
     // std::string PrettyType(dex::TypeIndex type_idx) const;
     PrettyType(type_idx: number): string {
-        const PrettyTypeAddr = Module.findExportByName("libdexfile.so", "_ZNK3art7DexFile10PrettyTypeENS_3dex9TypeIndexE")!
-        const PrettyType = new NativeFunction(PrettyTypeAddr, "pointer", ["pointer", "pointer"])
-        return new StdString(PrettyType(this.handle, ptr(type_idx)) as NativePointer).disposeToString()
+        return callSym<string>(
+            "_ZNK3art7DexFile10PrettyTypeENS_3dex9TypeIndexE", "libdexfile.so",
+            "pointer", ["pointer", "pointer"],
+            this.handle, ptr(type_idx))
     }
 
     get begin(): NativePointer {

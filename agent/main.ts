@@ -9,6 +9,8 @@ globalThis.testArtMethod = () => {
 
         pathToArtMethod("com.unity3d.player.UnityPlayer.UnitySendMessage").showSmali()
 
+        pathToArtMethod("com.unity3d.player.UnityPlayer.UnitySendMessage").GetDexFile().toString()
+
     })
 
 }

@@ -9,7 +9,7 @@ export class ArtInstruction extends JSHandle {
     private static cached_kInstructionNames: String[] = []
     static get kInstructionNames(): String[] {
         if (ArtInstruction.cached_kInstructionNames.length > 0) return ArtInstruction.cached_kInstructionNames
-        const kInstructionNames_ptr: NativePointer = Module.findExportByName('libdexfile.so', '_ZN3art11Instruction17kInstructionNamesE')
+        const kInstructionNames_ptr: NativePointer = getSym('_ZN3art11Instruction17kInstructionNamesE', 'libdexfile.so', true)
         let arrary_ret: String[] = []
         let loopAddaddress: NativePointer = kInstructionNames_ptr
         while (!loopAddaddress.readPointer().isNull()) {
@@ -30,7 +30,7 @@ export class ArtInstruction extends JSHandle {
     private static cached_kInstructionDescriptors: InstructionDescriptor[] = []
     static get kInstructionDescriptors(): InstructionDescriptor[] {
         if (ArtInstruction.cached_kInstructionDescriptors.length > 0) return ArtInstruction.cached_kInstructionDescriptors
-        const kInstructionDescriptors_ptr = Module.findExportByName('libdexfile.so', '_ZN3art11Instruction23kInstructionDescriptorsE')
+        const kInstructionDescriptors_ptr = getSym('_ZN3art11Instruction23kInstructionDescriptorsE', 'libdexfile.so', true)
         const arrary_ret: InstructionDescriptor[] = []
         let loopAddaddress: NativePointer = kInstructionDescriptors_ptr
         let counter = 0xFF // 256
@@ -45,38 +45,43 @@ export class ArtInstruction extends JSHandle {
     // _ZNK3art11Instruction10DumpStringEPKNS_7DexFileE
     // std::string DumpString(const DexFile*) const;
     dumpString(dexFile: DexFile): String {
-        const DumpString_ptr: NativePointer = Module.findExportByName("libdexfile.so", "_ZNK3art11Instruction10DumpStringEPKNS_7DexFileE")!
-        const DumpString_func = new NativeFunction(DumpString_ptr, ["pointer", "pointer", "pointer"], ["pointer", "pointer"])
-        const result: NativePointer[] = DumpString_func(this.handle, dexFile.handle) as NativePointer[]
-        return StdString.fromPointers(result)
+        return StdString.fromPointers(callSym<NativePointer[]>(
+            "_ZNK3art11Instruction10DumpStringEPKNS_7DexFileE", "libdexfile.so"
+            , ["pointer", "pointer", "pointer"]
+            , ["pointer", "pointer"]
+            , this, dexFile))
     }
 
     // _ZNK3art11Instruction7DumpHexEm
     // std::string DumpHex(size_t code_units) const;
     dumpHex(code_units: number = 3): String {
-        const DumpHex_ptr: NativePointer = Module.findExportByName("libdexfile.so", "_ZNK3art11Instruction7DumpHexEm")
-        const DumpHex_func = new NativeFunction(DumpHex_ptr, ["pointer", "pointer", "pointer"], ["pointer", "int"])
-        const result: NativePointer[] = DumpHex_func(this.handle, code_units) as NativePointer[]
-        return StdString.fromPointers(result)
+        return StdString.fromPointers(callSym<NativePointer[]>(
+            "_ZNK3art11Instruction7DumpHexEm", "libdexfile.so"
+            , ["pointer", "pointer", "pointer"]
+            , ["pointer", "pointer"]
+            , this.handle, code_units))
     }
 
     // _ZNK3art11Instruction9DumpHexLEEm
     // std::string DumpHexLE(size_t instr_code_units) const;
     dumpHexLE(instr_code_units: number = 3): String {
         const realInsLen: number = this.SizeInCodeUnits / 2
-        if (realInsLen > instr_code_units) instr_code_units = realInsLen
-        const DumpHexLE_ptr: NativePointer = Module.findExportByName("libdexfile.so", "_ZNK3art11Instruction9DumpHexLEEm")
-        const DumpHexLE_func = new NativeFunction(DumpHexLE_ptr, ["pointer", "pointer", "pointer"], ["pointer", "int"])
-        const result: NativePointer[] = DumpHexLE_func(this.handle, instr_code_units) as NativePointer[]
+        const result: NativePointer[] = callSym<NativePointer[]>(
+            "_ZNK3art11Instruction9DumpHexLEEm", "libdexfile.so"
+            , ["pointer", "pointer", "pointer"]
+            , ["pointer", "int"]
+            , this.handle, realInsLen > instr_code_units ? realInsLen : instr_code_units)
         return `${realInsLen} - ${StdString.fromPointers(result)}`
     }
 
     // _ZNK3art11Instruction28SizeInCodeUnitsComplexOpcodeEv
     // size_t SizeInCodeUnitsComplexOpcode() const;
     sizeInCodeUnitsComplexOpcode(): number {
-        const SizeInCodeUnitsComplexOpcode_ptr: NativePointer = Module.findExportByName("libdexfile.so", "_ZNK3art11Instruction28SizeInCodeUnitsComplexOpcodeEv")
-        const SizeInCodeUnitsComplexOpcode_func = new NativeFunction(SizeInCodeUnitsComplexOpcode_ptr, ["pointer"], ["pointer"])
-        return SizeInCodeUnitsComplexOpcode_func(this.handle) as number
+        return callSym<number>(
+            "_ZNK3art11Instruction28SizeInCodeUnitsComplexOpcodeEv", "libdexfile.so"
+            , ["pointer", "pointer"]
+            , ["pointer"]
+            , this.handle)
     }
 
     // static const Instruction* At(const uint16_t* code) 
