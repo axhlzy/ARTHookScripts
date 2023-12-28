@@ -10,4 +10,6 @@ import './Instruction'
 import './OatQuickMethodHeader'
 import './ObjPtr'
 
+import './interpreter/include'
 import './mirror/include'
+import './runtime/include'

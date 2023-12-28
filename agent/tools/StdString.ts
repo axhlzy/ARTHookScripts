@@ -41,8 +41,4 @@ export class StdString {
     }
 }
 
-declare global {
-    var StdString: any
-}
-
-globalThis.StdString = StdString
+Reflect.set(globalThis, 'StdString', StdString)

@@ -272,6 +272,10 @@ export class DexFile extends JSHandle {
         return this.is_compact_dex ? DexFile.Compact_InsnsOffset : DexFile.Standard_InsnsOffset
     }
 
+    dump(path?: string): void {
+        // todo
+    }
+
 }
 
 export class DexFile_CodeItem extends JSHandle {

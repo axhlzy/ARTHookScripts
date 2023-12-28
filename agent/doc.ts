@@ -1,6 +1,3 @@
-
-
-
 // https://github.com/frida/frida-java-bridge/blob/main/lib/class-factory.js#L2072-L2073
 // Java.Field
 // this._p[0] => holder

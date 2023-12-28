@@ -182,8 +182,8 @@ export class ArtMethod extends JSHandle implements IArtMethod, SizeOfClass {
     PrettyJavaAccessFlags(): string {
         return StdString.fromPointers(callSym<NativePointer[]>(
             "_ZN3art21PrettyJavaAccessFlagsEj", "libdexfile.so",
-            ['pointer', 'pointer', 'pointer'], ['uint32', 'pointer'],
-            this.handle.add(getArtMethodSpec().offset.accessFlags).readU32()))
+            ['pointer', 'pointer', 'pointer'], ['pointer', 'uint32'],
+            this, this.handle.add(getArtMethodSpec().offset.accessFlags).readU32()))
     }
 
     // ObjPtr<mirror::DexCache> ArtMethod::GetObsoleteDexCache()

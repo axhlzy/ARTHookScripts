@@ -23,5 +23,31 @@ BUILD_ID=QP1A.191005.007.A3
      
       主要工作在于需要解析oat后二进制的符号信息，dump汇编的时候可用借此增加二进制的可读性，至于二进制可行性格式的inlinehook就很普通了
 
+---
 
-###### 免责声明:本框架为个人作品，任何人的复制、拷贝、使用等，只可用于正常的技术交流与学习，不可用于灰黑产业，不可从事违法犯罪行为。否则，后果自负!!!
+### 还想做的一些事情
+
+- 处理一些常见的时机
+  1. DefineClass
+  2. OpenCommon
+  3. OpenMemory
+     ...
+
+- 处理一些ART运行时的关键函数
+  1. ExecuteMterpImpl / ExecuteSwitchImpl - ExecuteSwitchImplCpp
+  2. doInvoke
+     ...
+
+- 从调用逻辑上来看
+   java -> java 
+   java -> oat
+   oat -> java
+   oat -> oat
+   java -> native
+   native -> java
+
+- 中间顺带处理一下dex2oat对dex优化流程的尝试
+
+
+###### 免责声明:本框架为个人作品，任何人的复制、拷贝、使用等
+###### 用于正常的技术交流与学习，不可用于灰黑产业，不可从事违法犯罪行为
