@@ -78,6 +78,7 @@ globalThis.listJavaMethods = (className: string | number = "com.unity3d.player.U
             const artMethod: ArtMethod = new ArtMethod(method.handle)
             LOGD(`\n\t[${++countMethods}] ${artMethod}`)
             if (showInfo) LOGZ(`\n\t\t${artMethod.getInfo()}`)
+            new ArtMethod(method.handle).showSmali()
         })
         newLine()
     } catch (e) {

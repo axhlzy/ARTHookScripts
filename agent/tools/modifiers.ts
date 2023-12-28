@@ -86,9 +86,9 @@ export class ArtModifiers {
 }
 
 declare global {
-    var ArtModifiers: any
     var PrettyAccessFlags: (access_flags: NativePointer | number) => string
 }
 
-globalThis.ArtModifiers = ArtModifiers
 globalThis.PrettyAccessFlags = (access_flags: NativePointer | number) => ArtModifiers.PrettyAccessFlags(access_flags)
+
+Reflect.set(globalThis, "ArtModifiers", ArtModifiers)

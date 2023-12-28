@@ -1,8 +1,12 @@
 import { StdString } from "../../../../tools/StdString"
 import { JSHandle } from "../../../JSHandle"
+import { PointerSize } from "./Globals"
 
 // virtual class DexFile;
 export class DexFile extends JSHandle {
+
+    public static readonly Standard_InsnsOffset: number = 0x2 * 4 + 0x4 * 2
+    public static readonly Compact_InsnsOffset: number = 0x2 * 4 + 0x4 * 1
 
     // The base address of the data section (same as Begin() for standard dex).
     //   const uint8_t* const data_begin_;
@@ -243,7 +247,7 @@ export class DexFile extends JSHandle {
 
     get is_compact_dex(): boolean {
         return this.begin.readCString() == "cdex001"
-        // 下面这个莫名其妙的搞不准确，从内存去看似乎也没看出来 === 1
+        // 下面这个莫名其妙的搞不准确，不知道是不是地址没算对，从内存去看似乎也没看出正确的值
         return this.is_compact_dex_.readU8() === 1
     }
 
@@ -251,12 +255,13 @@ export class DexFile extends JSHandle {
         return this.hiddenapi_domain_.readPointer()
     }
 
+    get DexInstsOffset(): number {
+        return this.is_compact_dex ? DexFile.Compact_InsnsOffset : DexFile.Standard_InsnsOffset
+    }
+
 }
 
 export class DexFile_CodeItem extends JSHandle {
-
-    public static readonly Standard_InsnsOffset: number = 0x2 * 4 + 0x4 * 2
-    public static readonly Compact_InsnsOffset: number = 0x2 * 4 + 0x4 * 1
 
     constructor(handle: NativePointer) {
         super(handle)

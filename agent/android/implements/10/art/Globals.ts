@@ -23,3 +23,7 @@ export const kFlagPreHeaderInsnsSize: NativePointer = ptr(0x1).shl(4)
 export const kInsnsSizeShift: number = 5
 // static constexpr size_t kInsnsSizeBits = sizeof(uint16_t) * kBitsPerByte -  kInsnsSizeShift;
 export const kInsnsSizeBits: number = (16 * (kBitsPerByte)) - (kInsnsSizeShift)
+
+
+export const Arch = Process.arch
+export const PointerSize = Process.pointerSize

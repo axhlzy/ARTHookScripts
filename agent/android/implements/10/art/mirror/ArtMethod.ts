@@ -5,9 +5,12 @@ import { StdString } from "../../../../../tools/StdString"
 import { InvokeType } from "../../../../../tools/enum"
 import { JSHandle } from "../../../../JSHandle"
 import { ArtClass } from "./ArtClass"
-import { DexFile } from "../DexFile"
+import { DexFile, DexFile_CodeItem } from "../DexFile"
 import { GcRoot } from "../GcRoot"
 import { ObjPtr } from "../ObjPtr"
+import { ArtInstruction } from "../Instruction"
+import { ArtModifiers } from "../../../../../tools/modifiers"
+import { DexCache } from "./DexCache"
 
 export class ArtMethod extends JSHandle implements IArtMethod, SizeOfClass {
 
@@ -199,26 +202,41 @@ export class ArtMethod extends JSHandle implements IArtMethod, SizeOfClass {
 
     // inline ObjPtr<mirror::DexCache> ArtMethod::GetDexCache()
     // bool IsObsolete() => return (GetAccessFlags() & kAccObsoleteMethod) != 0;
+    private static checkDexFile_onceFlag: boolean = true
     GetDexFile(): DexFile {
         let access_flags = this.handle.add(0x4).readU32()
         // IsObsolete() => (GetAccessFlags() & kAccObsoleteMethod) != 0
         if ((access_flags & ArtModifiers.kAccObsoleteMethod) != 0) {
             // LOGD(`flag => ${access_flags}`)
-            return new DexFile(this.GetObsoleteDexCache())
-        }
-        else {
-            // GcRoot<mirror::Class> declaring_class_
-            // declaring_class_ are 32 bits in both 32 and 64 bit architectures
-            // let declaring_class_ptr = ptr(this.handle.readU32())
-            // LOGD(`declaring_class_ptr: ${declaring_class_ptr}`)
-            // let dex_cache_ptr = ptr(declaring_class_ptr.add(0x10).readU32())
-            // LOGD(`dex_cache_ptr: ${dex_cache_ptr}`)
-            // let dex_file_ptr = dex_cache_ptr.add(0x10).readPointer()
-            // LOGD(`dex_file_ptr: ${dex_file_ptr}`)
-            // const obj = new ObjPtr(dex_file_ptr)
-            // LOGD(`GetDexFile: ${obj.toString()}`)
-            // return obj
+            return new DexCache(this.GetObsoleteDexCache()).dex_file
+        } else {
             return this.declaring_class.root.dex_cache.root.dex_file
+        }
+
+        function checkDexFile() {
+
+            if (!ArtMethod.checkDexFile_onceFlag) return
+            ArtMethod.checkDexFile_onceFlag = false
+
+            const artBase: NativePointer = Module.findBaseAddress("libart.so")!
+
+            const GetObsoleteDexCacheAddr = Module.findExportByName("libart.so", "_ZN3art9ArtMethod19GetObsoleteDexCacheEv")!
+            Interceptor.attach(GetObsoleteDexCacheAddr, {
+                onEnter(args) {
+                    LOGW(`onEnter GetObsoleteDexCacheAddr -> ${args[0]} -> ${args[0].readPointer()}`)
+                }, onLeave(retval) {
+                    LOGW(`onLeave GetObsoleteDexCacheAddr -> ${retval} -> ${retval.readPointer()}`)
+                }
+            })
+
+            const branchAddr = artBase.add(0x16C194)
+            Interceptor.attach(branchAddr, {
+                onEnter(this: InvocationContext, args: InvocationArguments) {
+                    const ctx = this.context as Arm64CpuContext
+                    const x0 = ctx.x0
+                    LOGW(`onEnter branchAddr -> PID:${Process.getCurrentThreadId()}-> ${x0} -> ${ptr(x0.readU32())}`)
+                }
+            })
         }
     }
 
@@ -369,4 +387,50 @@ export class ArtMethod extends JSHandle implements IArtMethod, SizeOfClass {
         return InvokeType.toString(GetInvokeTypeFunc(this.handle) as number)
     }
 
+    test() {
+        LOGD(`GetInvokeType -> ${this.GetInvokeType()}`)
+        LOGD(`GetRuntimeMethodName -> ${this.GetRuntimeMethodName()}`)
+        LOGD(`dex_code_item_offset_ -> ${this.dex_code_item_offset} -> ${ptr(this.dex_code_item_offset)}`)
+        LOGD(`dex_method_index -> ${ptr(this.dex_method_index)}`)
+        LOGD(`GetRuntimeMethodName -> ${this.GetRuntimeMethodName()}`)
+        // LOGD(`HasSameNameAndSignature -> ${this.HasSameNameAndSignature(art_1)}`)
+        LOGD(`access_flags_string -> ${this.access_flags_string}`)
+        LOGD(`GetQuickenedInfo -> ${this.GetQuickenedInfo()}`)
+        LOGD(`entry_point_from_quick_compiled_code -> ${this.entry_point_from_quick_compiled_code}`)
+    }
+
+    show = (num: number) => this.showSmali(num)
+
+    showSmali(num: number = -1, info: boolean = false, loopMax: number = 100): void {
+        const accessor: CodeItemInstructionAccessor = this.DexInstructions()
+        const dex_file: DexFile = this.GetDexFile()
+        let insns: ArtInstruction = accessor.InstructionAt()
+        newLine()
+        if (num != -1) LOGD(`↓accessor↓\n${accessor}\n`)
+        if (info) {
+            LOGD(`↓ArtMethod↓\n${this}\n`)
+            LOGD(`↓dex_file↓\n${dex_file}\n`)
+            if (num == -1) LOGD(`↓accessor↓\n${accessor}\n`)
+            newLine()
+        }
+        let offset: number = 0
+        let insns_num: number = 0
+        let count_num: number = num
+        const count_insns: number = accessor.insns_size_in_code_units * 2
+        while (true) {
+            const offStr: string = `[${(++insns_num).toString().padStart(3, ' ')}|${ptr(offset).toString().padEnd(5, ' ')}]`
+            LOGD(`${offStr} ${insns.handle} - ${insns.dumpHexLE()} | ${insns.dumpString(dex_file)}`)
+            offset += insns.SizeInCodeUnits
+            if (count_num != -1) {
+                if (--count_num <= 0) break
+            } else {
+                if (offset >= count_insns) break
+            }
+            insns = insns.Next()
+        }
+        newLine()
+    }
+
 }
+
+Reflect.set(globalThis, 'ArtMethod', ArtMethod)

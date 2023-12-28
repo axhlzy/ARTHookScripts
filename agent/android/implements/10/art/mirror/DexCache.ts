@@ -3,7 +3,7 @@ import { HeapReference } from "../../../../Interface/art/mirror/HeapReference"
 import { StdString } from "../../../../../tools/StdString"
 import { ArtObject } from "../../../../Object"
 import { DexFile } from "../DexFile"
-import { ArtClass } from "./ArtClass"
+import { PointerSize } from "../Globals"
 
 // C++ mirror of java.lang.DexCache.
 // class MANAGED DexCache final : public Object {}
@@ -120,8 +120,4 @@ export class DexCache extends ArtObject implements SizeOfClass {
 
 }
 
-declare global {
-    var DexCache: any
-}
-
-globalThis.DexCache = DexCache
+Reflect.set(globalThis, "DexCache", DexCache)

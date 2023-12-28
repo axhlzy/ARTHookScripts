@@ -1,10 +1,10 @@
 import { StandardDexFile_CodeItem } from "./StandardDexFile"
 import { CompactDexFile_CodeItem } from "./CompactDexFile"
+import { PointerSize, kInsnsSizeShift } from "./Globals"
+import { ArtInstruction } from "./Instruction"
 import { ArtMethod } from "./mirror/ArtMethod"
 import { JSHandle } from "../../../JSHandle"
 import { DexFile } from "./DexFile"
-import { kInsnsSizeShift } from "./DexFlags"
-import { ArtInstruction } from "./Instruction"
 
 export class CodeItemInstructionAccessor extends JSHandle implements SizeOfClass {
 
@@ -18,7 +18,7 @@ export class CodeItemInstructionAccessor extends JSHandle implements SizeOfClass
 
     // Pointer to the instructions, null if there is no code item.
     // const uint16_t* insns_ = nullptr;
-    insns_ = this.CurrentHandle.add(0x4)
+    insns_ = this.CurrentHandle.add(0x4) // ref ptr
 
     constructor(insns_size_in_code_units: number = 0, insns: NativePointer = NULL) {
         const needAllocSize: number = CodeItemInstructionAccessor.SIZE_OF_CodeItemInstructionAccessor
@@ -31,7 +31,7 @@ export class CodeItemInstructionAccessor extends JSHandle implements SizeOfClass
 
     toString(): String {
         let disp: string = `CodeItemInstructionAccessor<${this.handle}>`
-        disp += `\ninsns_size_in_code_units_: ${this.insns_size_in_code_units} | insns_: ${this.insns_}`
+        disp += `\ninsns_size_in_code_units: ${this.insns_size_in_code_units} | insns_: ${this.insns}`
         return disp
     }
 

@@ -20,6 +20,11 @@ export class ArtInstruction extends JSHandle {
         return arrary_ret
     }
 
+    // test
+    // ArtInstruction.kInstructionDescriptors.forEach((descriptor, index) => {
+    //     LOGD(`${index} -> ${descriptor}`)
+    // })
+
     // _ZN3art11Instruction23kInstructionDescriptorsE
     // static const InstructionDescriptor kInstructionDescriptors[];
     private static cached_kInstructionDescriptors: InstructionDescriptor[] = []
@@ -63,7 +68,7 @@ export class ArtInstruction extends JSHandle {
         const DumpHexLE_ptr: NativePointer = Module.findExportByName("libdexfile.so", "_ZNK3art11Instruction9DumpHexLEEm")
         const DumpHexLE_func = new NativeFunction(DumpHexLE_ptr, ["pointer", "pointer", "pointer"], ["pointer", "int"])
         const result: NativePointer[] = DumpHexLE_func(this.handle, instr_code_units) as NativePointer[]
-        return `[${realInsLen}] ${StdString.fromPointers(result)}`
+        return `${realInsLen} - ${StdString.fromPointers(result)}`
     }
 
     // _ZNK3art11Instruction28SizeInCodeUnitsComplexOpcodeEv

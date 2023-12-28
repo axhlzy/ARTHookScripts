@@ -1,8 +1,7 @@
 import { CodeItemDataAccessor } from "./CodeItemDataAccessor"
+import { PointerSize } from "./Globals"
 
 export class CodeItemDebugInfoAccessor extends CodeItemDataAccessor implements SizeOfClass {
-
-
 
     // const DexFile* dex_file_ = nullptr;
     dex_file_ = this.CurrentHandle.add(0x0)

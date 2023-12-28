@@ -1,4 +1,5 @@
 import { HeapReference } from "./Interface/art/mirror/HeapReference"
+import { PointerSize } from "./implements/10/art/Globals"
 import { JSHandle } from "./JSHandle"
 
 export class ArtObject extends JSHandle implements SizeOfClass {
