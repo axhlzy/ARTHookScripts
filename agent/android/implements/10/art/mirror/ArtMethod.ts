@@ -408,13 +408,13 @@ export class ArtMethod extends JSHandle implements IArtMethod, SizeOfClass {
         const dex_file: DexFile = this.GetDexFile()
         let insns: ArtInstruction = accessor.InstructionAt()
         if (!this.jniCode.isNull()) {
-            LOGD(`↓ArtMethod↓\n${this}`)
+            LOGD(`👉 ${this}`)
             return LOGE(`jniCode is not null -> ${this.jniCode}`)
         }
         newLine()
+        LOGD(`👉 ${this}\n`)
         if (num != -1) LOGD(`↓accessor↓\n${accessor}\n`)
         if (info) {
-            LOGD(`↓ArtMethod↓\n${this}\n`)
             LOGD(`↓dex_file↓\n${dex_file}\n`)
             if (num == -1) LOGD(`↓accessor↓\n${accessor}\n`)
             newLine()
