@@ -39,7 +39,7 @@ export function getJavaMembersFromClass(className: string = "com.unity3d.player.
     return { "methods": ar_methods, "fields": ar_fields, "fields_name": ar_fields_name }
 }
 
-globalThis.listJavaMethods = (className: string | number = "com.unity3d.player.UnityPlayer", showInfo: boolean = true) => {
+globalThis.listJavaMethods = (className: string | number = "com.unity3d.player.UnityPlayer", showInfo: boolean = true, showSmali: boolean = false) => {
     let countFields = 0
     let countMethods = 0
 
@@ -78,7 +78,7 @@ globalThis.listJavaMethods = (className: string | number = "com.unity3d.player.U
             const artMethod: ArtMethod = new ArtMethod(method.handle)
             LOGD(`\n\t[${++countMethods}] ${artMethod}`)
             if (showInfo) LOGZ(`\n\t\t${artMethod.getInfo()}`)
-            new ArtMethod(method.handle).showSmali()
+            if (showSmali) new ArtMethod(method.handle).showSmali()
         })
         newLine()
     } catch (e) {
@@ -101,28 +101,46 @@ globalThis.enumClasses = () => {
     })
 }
 
-globalThis.findJavaClasses = (keyword: string, searchInstance = true) => {
+// findJavaClasses("display",true)
+globalThis.findJavaClasses = (keyword: string, depSearch: boolean = false, searchInstance = true) => {
     let countClasses: number = -1
     newLine()
     ArrayCurrentItems.splice(0, ArrayCurrentItems.length)
-    Java.enumerateLoadedClasses({
-        onMatch: function (className) {
-            if (className.includes(keyword)) {
-                ArrayCurrentItems.push(className)
-                LOGD(`[${++countClasses}] ${className}`)
-                if (searchInstance) {
-                    const instances: any[] | void = ChooseClasses(countClasses, true)
-                    let instanceCount = -1
-                    if (instances != undefined && (instances as any[]).length > 0) {
-                        LOGZ(`\t[${++instanceCount}] ${instances[0]}}]`)
+    if (depSearch) {
+        Java.enumerateClassLoaders({
+            onMatch: function (loader) {
+                enumClasses(loader)
+            },
+            onComplete: function () {
+
+            }
+        })
+    } else {
+        enumClasses(Java.classFactory.loader)
+    }
+
+    function enumClasses(loader: Java.Wrapper) {
+        (Java.classFactory as any).loader = loader
+        LOGW(`Using loader: ${loader}`)
+        Java.enumerateLoadedClasses({
+            onMatch: function (className) {
+                if (className.includes(keyword)) {
+                    ArrayCurrentItems.push(className)
+                    LOGD(`[${++countClasses}] ${className}`)
+                    if (searchInstance) {
+                        const instances: any[] | void = ChooseClasses(countClasses, true)
+                        let instanceCount = -1
+                        if (instances != undefined && (instances as any[]).length > 0) {
+                            LOGZ(`\t[${++instanceCount}] ${instances[0]}}]`)
+                        }
                     }
                 }
+            },
+            onComplete: function () {
+                LOGZ(`\nTotal classes: ${countClasses + 1}\n`)
             }
-        },
-        onComplete: function () {
-            LOGZ(`\nTotal classes: ${countClasses + 1}\n`)
-        }
-    })
+        })
+    }
 }
 
 globalThis.ChooseClasses = (className: string | number, retArray: boolean = false) => {
@@ -158,8 +176,8 @@ globalThis.ChooseClasses = (className: string | number, retArray: boolean = fals
 }
 
 declare global {
-    var listJavaMethods: (className?: string, showInfo?: boolean) => void
+    var listJavaMethods: (className: string | number, showInfo?: boolean, showSmali?: boolean) => void
     var enumClasses: () => void
-    var findJavaClasses: (keyword: string) => void
+    var findJavaClasses: (keyword: string, depSearch?: boolean, searchInstance?: boolean) => void
     var ChooseClasses: (className: string | number, retArray?: boolean) => void | any[]
 }

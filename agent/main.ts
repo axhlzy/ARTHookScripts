@@ -13,6 +13,8 @@ globalThis.testArtMethod = () => {
 
 }
 
+// setImmediate(testArtMethod)
+
 declare global {
     var testArtMethod: () => void
 }
