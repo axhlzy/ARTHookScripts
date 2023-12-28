@@ -138,6 +138,10 @@ export class ArtMethod extends JSHandle implements IArtMethod, SizeOfClass {
         return this.ptr_sized_fields_.data_.readPointer()
     }
 
+    get jniCode(): NativePointer {
+        return this.data
+    }
+
     get entry_point_from_quick_compiled_code(): NativePointer {
         return this.ptr_sized_fields_.entry_point_from_quick_compiled_code_.readPointer()
     }
@@ -405,6 +409,10 @@ export class ArtMethod extends JSHandle implements IArtMethod, SizeOfClass {
         const accessor: CodeItemInstructionAccessor = this.DexInstructions()
         const dex_file: DexFile = this.GetDexFile()
         let insns: ArtInstruction = accessor.InstructionAt()
+        if (!this.jniCode.isNull()) {
+            LOGD(`↓ArtMethod↓\n${this}`)
+            return LOGE(`jniCode is not null -> ${this.jniCode}`)
+        }
         newLine()
         if (num != -1) LOGD(`↓accessor↓\n${accessor}\n`)
         if (info) {
