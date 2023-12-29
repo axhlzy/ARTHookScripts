@@ -198,6 +198,7 @@ export class ArtMethod extends JSHandle implements IArtMethod, SizeOfClass {
 
     GetCodeItem(): NativePointer {
         const dexCodeItemOffset = this.dex_code_item_offset
+        if (dexCodeItemOffset == 0) return ptr(0)
         const dexFile = this.GetDexFile()
         return dexFile.data_begin.add(dexCodeItemOffset)
     }
@@ -401,24 +402,23 @@ export class ArtMethod extends JSHandle implements IArtMethod, SizeOfClass {
         LOGD(`entry_point_from_quick_compiled_code -> ${this.entry_point_from_quick_compiled_code}`)
     }
 
-    show = (num: number) => this.showSmali(num)
+    show = (num?: number) => {
+        const debugInfo: DebugSymbol = DebugSymbol.fromAddress(this.entry_point_from_quick_compiled_code)
+        debugInfo.moduleName == "base.odex" ? this.showOatAsm(num) : this.showSmali(num)
+    }
 
-    showSmali(num: number = -1, info: boolean = false, loopMax: number = 100): void {
+    showSmali(num: number = -1, info: boolean = false): void {
         const accessor: CodeItemInstructionAccessor = this.DexInstructions()
         const dex_file: DexFile = this.GetDexFile()
         let insns: ArtInstruction = accessor.InstructionAt()
         if (!this.jniCode.isNull()) {
             LOGD(`👉 ${this}`)
-            return LOGE(`jniCode is not null -> ${this.jniCode}`)
+            LOGE(`jniCode is not null -> ${this.jniCode}`)
+            return
         }
-        newLine()
-        LOGD(`👉 ${this}\n`)
-        if (num != -1) LOGD(`↓accessor↓\n${accessor}\n`)
-        if (info) {
-            LOGD(`↓dex_file↓\n${dex_file}\n`)
-            if (num == -1) LOGD(`↓accessor↓\n${accessor}\n`)
-            newLine()
-        }
+        LOGD(`↓dex_file↓\n${dex_file}\n`)
+        LOGD(`👉 ${this}\n${this.getInfo()}`)
+        if (info) LOGD(`↓accessor↓\n${accessor}\n`)
         let offset: number = 0
         let insns_num: number = 0
         let count_num: number = num
@@ -433,6 +433,26 @@ export class ArtMethod extends JSHandle implements IArtMethod, SizeOfClass {
                 if (offset >= count_insns) break
             }
             insns = insns.Next()
+        }
+        newLine()
+    }
+
+    showOatAsm(num: number = 20) {
+        let insns: Instruction = Instruction.parse(this.entry_point_from_quick_compiled_code)
+        newLine()
+        LOGD(`👉 ${this}\n${this.getInfo()}`)
+        LOGD(`↓insns↓\n`)
+
+        let num_local: number = 0
+        let code_offset: number = 0
+        while (++num_local < num) {
+            let indexStr: string = `[${num_local.toString().padStart(4, ' ')}|${ptr(code_offset).toString().padEnd(5, ' ')}]`
+            LOGD(`${indexStr} ${insns.address}\t${insns.toString()}`)
+            code_offset += insns.size
+            insns = Instruction.parse(insns.next)
+            // todo 这里的num后续可以省略，使用栈寄存器判断平栈的位置作为函数结束的位置
+            // 还需要去了解一下oat文件格式，配合一些其他的信息来添加上更多的一些符号信息以便于提高可读性
+            // 解析出更多信息后是不是可以考虑在进入这个函数的时候判断当前函数是否已经被oat然后决定实现javahook的方式直接去hook已经编译好的oat文件
         }
         newLine()
     }

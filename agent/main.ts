@@ -1,25 +1,22 @@
+import { ArtMethod } from "./android/implements/10/art/mirror/ArtMethod"
 import "./include"
 
 globalThis.testArtMethod = () => {
 
     Java.perform(() => {
 
-        var JavaString = Java.use("java.lang.String")
+        const JavaString = Java.use("java.lang.String")
         Java.use("com.unity3d.player.UnityPlayer").UnitySendMessage(JavaString.$new("1"), JavaString.$new("2"), JavaString.$new("3"))
-        newLine()
 
-        LOGD(pathToArtMethod("com.unity3d.player.UnityPlayer.UnitySendMessage").GetDexFile().toString())
-
-        pathToArtMethod("com.unity3d.player.UnityPlayer.UnitySendMessage").showSmali()
+        pathToArtMethod("com.unity3d.player.UnityPlayer.UnitySendMessage").show()
 
     })
-
 }
 
 globalThis.testRegisterJavaClass = () => {
 
     Java.performNow(() => {
-        var newClass = Java.registerClass({
+        const newClass = Java.registerClass({
             // superClass: Java.use("java.lang.Object"),
             name: "com.unity3d.player.test",
             fields: {
@@ -49,9 +46,17 @@ globalThis.testRegisterJavaClass = () => {
 
 }
 
+globalThis.sendMessage = (a: string = "test_class", b: string = "test_function", c: string = "test_value") => {
+    Java.perform(() => {
+        const JavaString = Java.use("java.lang.String")
+        Java.use("com.unity3d.player.UnityPlayer").UnitySendMessage(JavaString.$new(a), JavaString.$new(b), JavaString.$new(c))
+    })
+}
+
 // setImmediate(testArtMethod)
 
 declare global {
     var testArtMethod: () => void
+    var sendMessage: (a?: string, b?: string, c?: string) => void
     var testRegisterJavaClass: () => void
 }

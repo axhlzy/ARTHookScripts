@@ -1,5 +1,5 @@
+// https://github.com/frida/frida-java-bridge/blob/main/lib/android.js
 
-import { ArtModifiers } from '../tools/modifiers'
 import { parseInstructionsAt } from './machine-code'
 
 const jsizeSize = 4
