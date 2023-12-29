@@ -1,6 +1,6 @@
 import { StdString } from "../../../../tools/StdString"
 import { JSHandle } from "../../../JSHandle"
-import { DexFile } from "./DexFile"
+import { DexFile } from "./dexfile/DexFile"
 
 export class ArtInstruction extends JSHandle {
 

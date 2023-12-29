@@ -2,7 +2,7 @@
 import { HeapReference } from "../../../../Interface/art/mirror/HeapReference"
 import { StdString } from "../../../../../tools/StdString"
 import { ArtObject } from "../../../../Object"
-import { DexFile } from "../DexFile"
+import { DexFile } from "../dexfile/DexFile"
 import { PointerSize } from "../Globals"
 
 // C++ mirror of java.lang.DexCache.
@@ -46,7 +46,12 @@ export class DexCache extends ArtObject implements SizeOfClass {
 
     toString(): String {
         let disp: string = `DexCache<P:${this.handle}|C:${this.currentHandle}>`
-        // disp += `location: ${this.location.root.disposeToString()} \n`
+        disp += `\nlocation: ${ptr(this.location_.readU32()).add(PointerSize * 2).readCString()}`
+        disp += `\npreresolved_strings_: ${this.preresolved_strings} | num_preresolved_strings_: ${this.num_preresolved_strings} | resolved_call_sites_: ${this.resolved_call_sites}`
+        disp += `\nresolved_fields_: ${this.resolved_fields} | resolved_methods_: ${this.resolved_methods} | resolved_types_: ${this.resolved_types}`
+        disp += `\nstrings_: ${this.strings} | num_resolved_call_sites_: ${this.num_resolved_call_sites} | num_resolved_fields_: ${this.num_resolved_fields}`
+        disp += `\nnum_resolved_method_types_: ${this.num_resolved_method_types} | num_resolved_methods_: ${this.num_resolved_methods} | num_resolved_types_: ${this.num_resolved_types}`
+        disp += `\nnum_strings_: ${this.num_strings}`
         return disp
     }
 
@@ -59,7 +64,7 @@ export class DexCache extends ArtObject implements SizeOfClass {
     }
 
     get location(): HeapReference<StdString> {
-        return new HeapReference((handle) => new StdString(handle), ptr(this.location_.readU32()))
+        return new HeapReference(handle => new StdString(handle), this.location_)
     }
 
     get num_preresolved_strings(): number {

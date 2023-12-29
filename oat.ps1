@@ -3,21 +3,28 @@
 $packageName = Read-Host "Input PackageName"
 $packageName = $packageName.Trim()
 
+$debuggable = adb shell getprop ro.debuggable
+$commandSU = ""
+if ($debuggable -eq "1") {
+    $commandSU = ""
+    # $commandSU = "su -c"
+}
+
 function getOatPath($packageName) {
 
-    $runtimePackageName = & adb shell su -c "ls /data/app/" | Select-String $packageName
+    $runtimePackageName = & adb shell $commandSU "ls /data/app/" | Select-String $packageName
     if (-not $runtimePackageName) {
         # adb shell pm path packageName -> package:/data/app/~~K1q-KAt6CSBAPEc2w6TXLQ==/com.mobirate.rcr2.gplay-kJZPvno6tzkKYEtNWwEimg==/base.apk
         # get ~~K1q-KAt6CSBAPEc2w6TXLQ==
-        $runtimePackageName = & adb shell su -c "pm path $packageName"
+        $runtimePackageName = & adb shell $commandSU "pm path $packageName"
     
-        $pmPathOutput = adb shell su -c "pm path $packageName"
+        $pmPathOutput = adb shell $commandSU "pm path $packageName"
         $pattern = "package:(.*?)base.apk"
         $runtimePackageName = $pmPathOutput | Select-String -Pattern $pattern -AllMatches
     
         if ($runtimePackageName.Matches.Count -gt 0) {
             $packagePath = $runtimePackageName.Matches[0].Groups[1].Value + "oat"
-            $lib_arch_path = adb shell su -c ls $packagePath
+            $lib_arch_path = adb shell $commandSU ls $packagePath
             $oatPath = $packagePath + "/" + $lib_arch_path
         }
         else {
@@ -28,8 +35,8 @@ function getOatPath($packageName) {
     else {
         # libpath = "/data/data/" + packageName + "/lib"
         $packagePath = "/data/app/" + $runtimePackageName + "/oat"
-        # adb shell su -c ls libpath
-        $lib_arch_path = adb shell su -c ls $packagePath
+        # adb shell $commandSU ls libpath
+        $lib_arch_path = adb shell $commandSU ls $packagePath
         $oatPath = $packagePath + "/" + $lib_arch_path
     }
     return $oatPath
@@ -37,11 +44,11 @@ function getOatPath($packageName) {
 
 function printOATFiles($oatPath) {
     # get oat file
-    $files = adb shell su -c ls $oatPath
+    $files = adb shell $commandSU ls $oatPath
     $files = $files -split "\r\n"
     $filesSize = @{}
     foreach ($file in $files) {
-        $fileSize = adb shell su -c ls -l $oatPath/$file
+        $fileSize = adb shell $commandSU ls -l $oatPath/$file
         $fileSize = $fileSize -split "\r\n"
         $fileSize = $fileSize[0].Split(" ", [StringSplitOptions]::RemoveEmptyEntries)
         $filesSize.Add($file, $fileSize[4])
@@ -96,33 +103,33 @@ while ($option -ne 9) {
 
     switch ($option) {
         "1" {
-            Write-Host "execute -> cmd package compile -m -c -f interpret-only $packageName" -ForegroundColor Green
-            $result = adb shell cmd package compile -m -c -f interpret-only $packageName
+            Write-Host "execute -> cmd package compile -m interpret-only $packageName" -ForegroundColor Green
+            $result = adb shell cmd package compile -m interpret-only $packageName
         }
         "2" {
-            Write-Host "execute -> cmd package compile -m -c -f space-profile $packageName" -ForegroundColor Green
-            $result = adb shell cmd package compile -m -c -f space-profile $packageName
+            Write-Host "execute -> cmd package compile -m space-profile $packageName" -ForegroundColor Green
+            $result = adb shell cmd package compile -m space-profile $packageName
         }
         "3" {
-            Write-Host "execute -> cmd package compile -m -c -f space $packageName" -ForegroundColor Green
-            $result = adb shell cmd package compile -m -c -f space $packageName
+            Write-Host "execute -> cmd package compile -m space $packageName" -ForegroundColor Green
+            $result = adb shell cmd package compile -m space $packageName
         }
         "4" {
-            Write-Host "execute -> cmd package compile -m -c -f speed-profile $packageName" -ForegroundColor Green
-            $result = adb shell cmd package compile -m -c -f speed-profile $packageName
+            Write-Host "execute -> cmd package compile -m speed-profile $packageName" -ForegroundColor Green
+            $result = adb shell cmd package compile -m speed-profile $packageName
         }
         "5" {
-            Write-Host "execute -> cmd package compile -m -c -f speed $packageName" -ForegroundColor Green
-            $result = adb shell cmd package compile -m -c -f speed $packageName
+            Write-Host "execute -> cmd package compile -m speed $packageName" -ForegroundColor Green
+            $result = adb shell cmd package compile -m speed $packageName
         }
         "6" {
-            Write-Host "execute -> cmd package compile -m -c -f everything $packageName" -ForegroundColor Green
-            $result = adb shell cmd package compile -m -c -f everything $packageName
+            Write-Host "execute -> cmd package compile -m everything $packageName" -ForegroundColor Green
+            $result = adb shell cmd package compile -m everything $packageName
         }
         "7" {
             Write-Host "execute -> cmd package compile --reset $packageName" -ForegroundColor Green
             # $result = adb shell cmd package compile --reset $packageName
-            adb shell su -c rm -rf $oatPath
+            adb shell $commandSU rm -rf $oatPath
             return
         }
         "8" {
@@ -134,13 +141,13 @@ while ($option -ne 9) {
         "9" {
             # pull oat files
             $oatPathLocal = Read-Host "Input host oat path"
-            $oatFiles = adb shell su -c ls $oatPath
+            $oatFiles = adb shell $commandSU ls $oatPath
             $oatFiles = $oatFiles -split "\r\n"
-            adb shell su -c chmod 777 $oatPath/*
+            adb shell $commandSU chmod 777 $oatPath/*
             foreach ($oatFile in $oatFiles) {
-                adb shell su -c cp $oatPath/$oatFile /data/local/tmp
+                adb shell $commandSU cp $oatPath/$oatFile /data/local/tmp
                 adb pull /data/local/tmp/$oatFile $oatPathLocal
-                adb shell su -c rm -rf /data/local/tmp/$oatFile
+                adb shell $commandSU rm -rf /data/local/tmp/$oatFile
             }
             $result = "Success"
         }

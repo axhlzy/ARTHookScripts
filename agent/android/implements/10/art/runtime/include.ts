@@ -1,1 +1,1 @@
-import './dex2oat/include'
+import './OatQuickMethodHeader'

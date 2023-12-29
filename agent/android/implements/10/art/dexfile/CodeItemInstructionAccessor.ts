@@ -1,9 +1,9 @@
 import { StandardDexFile_CodeItem } from "./StandardDexFile"
 import { CompactDexFile_CodeItem } from "./CompactDexFile"
-import { PointerSize, kInsnsSizeShift } from "./Globals"
-import { ArtInstruction } from "./Instruction"
-import { ArtMethod } from "./mirror/ArtMethod"
-import { JSHandle } from "../../../JSHandle"
+import { PointerSize, kInsnsSizeShift } from "../Globals"
+import { JSHandle } from "../../../../JSHandle"
+import { ArtMethod } from "../mirror/ArtMethod"
+import { ArtInstruction } from "../Instruction"
 import { DexFile } from "./DexFile"
 
 export class CodeItemInstructionAccessor extends JSHandle implements SizeOfClass {

@@ -1,5 +1,5 @@
 import { CodeItemDataAccessor } from "./CodeItemDataAccessor"
-import { PointerSize } from "./Globals"
+import { PointerSize } from "../Globals"
 
 export class CodeItemDebugInfoAccessor extends CodeItemDataAccessor implements SizeOfClass {
 

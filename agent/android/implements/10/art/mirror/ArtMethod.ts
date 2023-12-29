@@ -1,6 +1,6 @@
-import { CodeItemInstructionAccessor } from "../CodeItemInstructionAccessor"
+
 import { IArtMethod } from "../../../../Interface/art/mirror/IArtMethod"
-import { OatQuickMethodHeader } from "../OatQuickMethodHeader"
+import { OatQuickMethodHeader } from "../runtime/OatQuickMethodHeader"
 import { ArtModifiers } from "../../../../../tools/modifiers"
 import { StdString } from "../../../../../tools/StdString"
 import { InvokeType } from "../../../../../tools/enum"
@@ -9,8 +9,9 @@ import { JSHandle } from "../../../../JSHandle"
 import { PointerSize } from "../Globals"
 import { ArtClass } from "./ArtClass"
 import { DexCache } from "./DexCache"
-import { DexFile } from "../DexFile"
 import { GcRoot } from "../GcRoot"
+import { CodeItemInstructionAccessor } from "../dexfile/CodeItemInstructionAccessor"
+import { DexFile } from "../dexfile/DexFile"
 
 export class ArtMethod extends JSHandle implements IArtMethod, SizeOfClass {
 
@@ -203,18 +204,22 @@ export class ArtMethod extends JSHandle implements IArtMethod, SizeOfClass {
         return dexFile.data_begin.add(dexCodeItemOffset)
     }
 
-    // inline ObjPtr<mirror::DexCache> ArtMethod::GetDexCache()
-    // bool IsObsolete() => return (GetAccessFlags() & kAccObsoleteMethod) != 0;
-    private static checkDexFile_onceFlag: boolean = true
-    GetDexFile(): DexFile {
+    GetDexCache(): DexCache {
         let access_flags = this.handle.add(0x4).readU32()
         // IsObsolete() => (GetAccessFlags() & kAccObsoleteMethod) != 0
         if ((access_flags & ArtModifiers.kAccObsoleteMethod) != 0) {
             // LOGD(`flag => ${access_flags}`)
-            return this.GetObsoleteDexCache().dex_file
+            return this.GetObsoleteDexCache()
         } else {
-            return this.declaring_class.root.dex_cache.root.dex_file
+            return new DexCache(this.declaring_class.root.dex_cache.root.handle)
         }
+    }
+
+    // inline ObjPtr<mirror::DexCache> ArtMethod::GetDexCache()
+    // bool IsObsolete() => return (GetAccessFlags() & kAccObsoleteMethod) != 0;
+    private static checkDexFile_onceFlag: boolean = true
+    GetDexFile(): DexFile {
+        return this.GetDexCache().dex_file
 
         function checkDexFile() {
 

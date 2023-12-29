@@ -17,4 +17,8 @@ export class JSHandle implements SizeOfClass {
     get VirtualClassOffset(): number {
         return 0
     }
+
+    show(): void {
+        LOGD(this.toString())
+    }
 }

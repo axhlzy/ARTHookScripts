@@ -1,6 +1,7 @@
-import { StdString } from "../../../../tools/StdString"
-import { JSHandle } from "../../../JSHandle"
-import { PointerSize } from "./Globals"
+import { StdString } from "../../../../../tools/StdString"
+import { JSHandle } from "../../../../JSHandle"
+import { PointerSize } from "../Globals"
+
 
 // virtual class DexFile;
 export class DexFile extends JSHandle {

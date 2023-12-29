@@ -1,4 +1,4 @@
-import { StdString } from "../../../../../../tools/StdString";
+import { StdString } from "../../../../tools/StdString";
 
 export class dex2oat {
 

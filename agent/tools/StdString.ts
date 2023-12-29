@@ -1,3 +1,5 @@
+import { PointerSize } from "../android/implements/10/art/Globals"
+
 export class StdString {
 
     private static STD_STRING_SIZE = 3 * Process.pointerSize
@@ -8,32 +10,41 @@ export class StdString {
         this.handle = mPtr
     }
 
-    private dispose() {
+    private dispose(): void {
         const [data, isTiny] = this._getData()
         if (!isTiny) (Java as any).api.$delete(data)
     }
 
-    static fromPointers(ptrs: NativePointer[]) {
+    static fromPointer(ptrs: NativePointer): string {
+        return StdString.fromPointers([ptrs, ptrs.add(PointerSize), ptrs.add(PointerSize * 2)])
+    }
+
+    static fromPointers(ptrs: NativePointer[]): string {
         if (ptrs.length != 3) return ''
+        return StdString.fromPointersRetInstance(ptrs).disposeToString()
+    }
+
+    static fromPointersRetInstance(ptrs: NativePointer[]): StdString {
+        if (ptrs.length != 3) return new StdString()
         const stdString = new StdString()
         stdString.handle.writePointer(ptrs[0])
         stdString.handle.add(Process.pointerSize).writePointer(ptrs[1])
         stdString.handle.add(2 * Process.pointerSize).writePointer(ptrs[2])
-        return stdString.disposeToString()
+        return stdString
     }
 
-    disposeToString() {
+    disposeToString(): string {
         const result = this.toString()
         this.dispose()
         return result
     }
 
-    toString() {
+    toString(): string {
         const data: NativePointer = this._getData()[0] as NativePointer
-        return data.readUtf8String()
+        return data.readCString()
     }
 
-    private _getData() {
+    private _getData(): [NativePointer, boolean] {
         const str = this.handle
         const isTiny = (str.readU8() & 1) === 0
         const data = isTiny ? str.add(1) : str.add(2 * Process.pointerSize).readPointer()
