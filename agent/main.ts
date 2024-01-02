@@ -1,4 +1,5 @@
-import { ArtMethod } from "./android/implements/10/art/mirror/ArtMethod"
+import { DefineClassHookManager } from "./android/start/DefineClass"
+import { OpenCommonHookManager } from "./android/start/OpenCommon"
 import "./include"
 
 globalThis.testArtMethod = () => {
@@ -53,7 +54,13 @@ globalThis.sendMessage = (a: string = "test_class", b: string = "test_function",
     })
 }
 
-// setImmediate(testArtMethod)
+addSoLoadCallBack("libdexfile.so", () => {
+    // OpenCommonHookManager.getInstance().enableHook()
+})
+
+addSoLoadCallBack("libart.so", () => {
+    DefineClassHookManager.getInstance().enableHook()
+})
 
 declare global {
     var testArtMethod: () => void

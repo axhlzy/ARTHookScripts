@@ -1,3 +1,4 @@
+import { get } from "http"
 import { StdString } from "../../../../../tools/StdString"
 import { JSHandle } from "../../../../JSHandle"
 import { PointerSize } from "../Globals"
@@ -196,7 +197,11 @@ export class DexFile extends JSHandle {
     }
 
     get location(): string {
-        return new StdString(this.location_).toString()
+        try {
+            return new StdString(this.location_).toString()
+        } catch (error) {
+            return "ERROR"
+        }
     }
 
     get location_checksum(): number {
@@ -260,9 +265,13 @@ export class DexFile extends JSHandle {
     }
 
     get is_compact_dex(): boolean {
-        return this.begin.readCString() == "cdex001"
-        // 下面这个莫名其妙的搞不准确，不知道是不是地址没算对，从内存去看似乎也没看出正确的值
-        return this.is_compact_dex_.readU8() === 1
+        try {
+            return this.begin.readCString() == "cdex001"
+            // 下面这个莫名其妙的搞不准确，不知道是不是地址没算对，从内存去看似乎也没看出正确的值
+            return this.is_compact_dex_.readU8() === 1
+        } catch (error) {
+            return false
+        }
     }
 
     get hiddenapi_domain(): NativePointer {
@@ -273,8 +282,13 @@ export class DexFile extends JSHandle {
         return this.is_compact_dex ? DexFile.Compact_InsnsOffset : DexFile.Standard_InsnsOffset
     }
 
-    dump(path?: string): void {
-        // todo
+    dump(fileName?: string, path?: string): void {
+        let dexLocation: string = this.location
+        dexLocation = dexLocation.substring(dexLocation.lastIndexOf("/") + 1)
+        let localName = fileName == undefined ? `${this.begin}_${this.size}_${dexLocation}` : fileName
+        let localPath = path == undefined ? getFilesDir() : path
+        dumpMem(this.begin, this.size, localName, localPath, false)
+        LOGZ(`\t[SaveTo] => ${localPath}/${localName}`)
     }
 
 }
