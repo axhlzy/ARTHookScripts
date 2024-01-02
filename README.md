@@ -49,11 +49,18 @@ BUILD_ID=QP1A.191005.007.A3
 - 中间顺带处理一下dex2oat对dex优化流程的尝试
 
 
-[](https://github.com/axhlzy/ARTHookScripts/blob/master/imgs/showSmali.png)
+
+showOatAsm
+![showSmali](https://github.com/axhlzy/ARTHookScripts/blob/master/imgs/showOatAsm.png)
+
+showSmali
+![showOatAsm](https://github.com/axhlzy/ARTHookScripts/blob/master/imgs/showSmali.png)
+
+dumpDexFiles
+![dumpDexFiles](https://github.com/axhlzy/ARTHookScripts/blob/master/imgs/dumpDexFiles.png)
 
 
-[](https://github.com/axhlzy/ARTHookScripts/blob/master/imgs/showOatAsm.png)
-
+--- 
 
 ###### 免责声明:本框架为个人作品，任何人的复制、拷贝、使用等
 ###### 用于正常的技术交流与学习，不可用于灰黑产业，不可从事违法犯罪行为
