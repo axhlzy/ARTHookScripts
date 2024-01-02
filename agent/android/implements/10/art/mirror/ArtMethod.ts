@@ -447,6 +447,7 @@ export class ArtMethod extends JSHandle implements IArtMethod, SizeOfClass {
         newLine()
         LOGD(`👉 ${this}\n${this.getInfo()}`)
         LOGD(`↓insns↓\n`)
+        // 暂时无法去确定asm的结束位置
 
         let num_local: number = 0
         let code_offset: number = 0

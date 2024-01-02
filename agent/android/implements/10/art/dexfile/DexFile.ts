@@ -1,6 +1,6 @@
-import { get } from "http"
 import { StdString } from "../../../../../tools/StdString"
 import { JSHandle } from "../../../../JSHandle"
+import { OatDexFile } from "../Oat/OatDexFile"
 import { PointerSize } from "../Globals"
 
 
@@ -114,7 +114,8 @@ export class DexFile extends JSHandle {
         let disp: String = `DexFile<${this.handle}> \n`
         disp += `location: ${this.location} \n`
         disp += `location_checksum: ${this.location_checksum} ( ${ptr(this.location_checksum)} ) is_compact_dex: ${this.is_compact_dex} \n`
-        disp += `begin: ${this.begin} size: ${this.size} ( ${ptr(this.size)} ) | data_begin: ${this.data_begin} data_size: ${this.data_size} ( ${ptr(this.data_size)} ) `
+        disp += `begin: ${this.begin} size: ${this.size} ( ${ptr(this.size)} ) | data_begin: ${this.data_begin} data_size: ${this.data_size} ( ${ptr(this.data_size)} ) \n`
+        disp += `oat_dex_file ${this.oat_dex_file}`
         return disp
     }
 
@@ -256,8 +257,8 @@ export class DexFile extends JSHandle {
         return this.hiddenapi_class_data_.readPointer()
     }
 
-    get oat_dex_file(): NativePointer {
-        return this.oat_dex_file_.readPointer()
+    get oat_dex_file(): OatDexFile {
+        return new OatDexFile(this.oat_dex_file_.readPointer())
     }
 
     get container(): NativePointer {

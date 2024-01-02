@@ -40,6 +40,7 @@ export class DefineClassHookManager extends DexFileManager {
     }
 
     public enableHook() {
+        LOGD(`EnableHook -> DefineClassHookManager`)
         Interceptor.attach(this.defineClassAddress, {
             onEnter: function (this: InvocationContext, args: InvocationArguments) {
                 const dex_file = new DexFile(args[5])

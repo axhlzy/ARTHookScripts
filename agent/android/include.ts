@@ -2,6 +2,7 @@ import './Object'
 import './JSHandle'
 import './android'
 import './machine-code'
+import './TraceManager'
 
 import './implements/include'
 import './Interface/include'

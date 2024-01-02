@@ -36,6 +36,7 @@ export class OpenCommonHookManager extends DexFileManager {
 
     // todo 这里有点问题 晚点结合ida瞅瞅
     public enableHook() {
+        LOGD(`EnableHook -> OpenCommonHookManager`)
         Interceptor.attach(this.openCommonAddress, {
             onEnter: function (this: InvocationContext, args: InvocationArguments) {
                 let disp: string = `DexFileLoader::OpenCommon(\n`

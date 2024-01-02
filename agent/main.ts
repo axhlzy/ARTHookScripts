@@ -1,5 +1,4 @@
-import { DefineClassHookManager } from "./android/start/DefineClass"
-import { OpenCommonHookManager } from "./android/start/OpenCommon"
+import { TraceManager } from "./android/TraceManager"
 import "./include"
 
 globalThis.testArtMethod = () => {
@@ -13,6 +12,13 @@ globalThis.testArtMethod = () => {
 
     })
 }
+
+setImmediate(() => {
+
+    TraceManager.Trace_DefineClass()
+    // TraceManager.Trace_OpenCommon()
+
+})
 
 globalThis.testRegisterJavaClass = () => {
 
@@ -54,16 +60,9 @@ globalThis.sendMessage = (a: string = "test_class", b: string = "test_function",
     })
 }
 
-addSoLoadCallBack("libdexfile.so", () => {
-    // OpenCommonHookManager.getInstance().enableHook()
-})
-
-addSoLoadCallBack("libart.so", () => {
-    DefineClassHookManager.getInstance().enableHook()
-})
-
 declare global {
     var testArtMethod: () => void
     var sendMessage: (a?: string, b?: string, c?: string) => void
     var testRegisterJavaClass: () => void
 }
+
