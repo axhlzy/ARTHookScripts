@@ -6,7 +6,7 @@ import { OatFile } from "./OatFile"
 export class OatDexFile extends JSHandle {
 
     //   const OatFile* const oat_file_ = nullptr;
-    oat_file_: NativePointer = this.CurrentHandle.add(0x0)
+    oat_file_: NativePointer = this.CurrentHandle
     //   const std::string dex_file_location_;
     dex_file_location_: NativePointer = this.oat_file_.add(PointerSize)
     //   const std::string canonical_dex_file_location_;
@@ -30,27 +30,36 @@ export class OatDexFile extends JSHandle {
     //   const DexLayoutSections* const dex_layout_sections_ = nullptr;
     dex_layout_sections_: NativePointer = this.lookup_table_.add(PointerSize)
 
-    constructor(ptr: NativePointer) {
-        super(ptr)
+    constructor(handle: NativePointer) {
+        super(handle)
     }
 
     get SizeOfClass(): number {
         return this.dex_layout_sections_.add(PointerSize).sub(this.CurrentHandle).toInt32()
     }
 
-    get currentHandle(): NativePointer {
+    get CurrentHandle(): NativePointer {
         return this.handle.add(super.SizeOfClass).add(this.VirtualClassOffset)
     }
 
     get VirtualClassOffset(): number {
-        return PointerSize
+        return 0
     }
 
     toString(): string {
         let disp: string = `OatDexFile<${this.handle}>`
-        // disp += `\n\t oat_file=${this.oat_file_}`
-        // disp += `\n\t dex_file_location=${this.dex_file_location_}`
-        // disp += `\n\t canonical_dex_file_location=${this.canonical_dex_file_location}`
+        disp += `\n\t oat_file = ${this.oat_file_}`
+        disp += `\n\t dex_file_location = ${this.dex_file_location} @ ${this.dex_file_location_}`
+        disp += `\n\t canonical_dex_file_location = ${this.canonical_dex_file_location} @ ${this.canonical_dex_file_location_}`
+        disp += `\n\t dex_file_location_checksum = ${this.dex_file_location_checksum} | ${ptr(this.dex_file_location_checksum)} @ ${this.dex_file_location_checksum_}`
+        disp += `\n\t dex_file_pointer = ${this.dex_file_pointer} @ ${this.dex_file_pointer_}`
+        disp += `\n\t lookup_table_data = ${this.lookup_table_data} @ ${this.lookup_table_data_}`
+        disp += `\n\t method_bss_mapping = ${this.method_bss_mapping} @ ${this.method_bss_mapping_}`
+        disp += `\n\t type_bss_mapping = ${this.type_bss_mapping} @ ${this.type_bss_mapping_}`
+        disp += `\n\t string_bss_mapping = ${this.string_bss_mapping} @ ${this.string_bss_mapping_}`
+        disp += `\n\t oat_class_offsets_pointer = ${this.oat_class_offsets_pointer} @ ${this.oat_class_offsets_pointer_}`
+        disp += `\n\t lookup_table = ${this.lookup_table} @ ${this.lookup_table_}`
+        disp += `\n\t dex_layout_sections = ${this.dex_layout_sections} @ ${this.dex_layout_sections_}`
         return disp
     }
 
@@ -70,6 +79,7 @@ export class OatDexFile extends JSHandle {
         return this.dex_file_location_checksum_.readUInt()
     }
 
+    // the same to DexFile->begin
     get dex_file_pointer(): NativePointer {
         return this.dex_file_pointer_.readPointer()
     }
@@ -90,8 +100,8 @@ export class OatDexFile extends JSHandle {
         return this.string_bss_mapping_.readPointer()
     }
 
-    get oat_class_offsets_pointer(): NativePointer {
-        return this.oat_class_offsets_pointer_.readPointer()
+    get oat_class_offsets_pointer(): number {
+        return this.oat_class_offsets_pointer_.readU32()
     }
 
     get lookup_table(): NativePointer {

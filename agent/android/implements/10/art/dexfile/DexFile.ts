@@ -35,7 +35,7 @@ export class DexFile extends JSHandle {
     location_checksum_ = this.location_.add(PointerSize * 3)
     // Points to the header section.
     //   const Header* const header_;
-    header_ = this.location_checksum_.add(0x4)
+    header_ = this.location_checksum_.add(0x4).add(0x4) // 后面计算oat_dex_file_缺了0x4 所以这里应该是内存对齐 （uint32_t -> 0x8）
     // Points to the base of the string identifier list.
     //   const dex::StringId* const string_ids_;
     string_ids_ = this.header_.add(PointerSize * 1)
@@ -111,11 +111,11 @@ export class DexFile extends JSHandle {
     }
 
     toString(): String {
-        let disp: String = `DexFile<${this.handle}> \n`
-        disp += `location: ${this.location} \n`
-        disp += `location_checksum: ${this.location_checksum} ( ${ptr(this.location_checksum)} ) is_compact_dex: ${this.is_compact_dex} \n`
-        disp += `begin: ${this.begin} size: ${this.size} ( ${ptr(this.size)} ) | data_begin: ${this.data_begin} data_size: ${this.data_size} ( ${ptr(this.data_size)} ) \n`
-        disp += `oat_dex_file ${this.oat_dex_file}`
+        let disp: String = `DexFile<${this.handle}>`
+        disp += `\n\t location: ${this.location}`
+        disp += `\n\t location_checksum: ${this.location_checksum} ( ${ptr(this.location_checksum)} ) is_compact_dex: ${this.is_compact_dex}`
+        disp += `\n\t begin: ${this.begin} size: ${this.size} ( ${ptr(this.size)} ) | data_begin: ${this.data_begin} data_size: ${this.data_size} ( ${ptr(this.data_size)} )`
+        disp += `\n\t oat_dex_file_ ${this.oat_dex_file_}`
         return disp
     }
 

@@ -5,7 +5,7 @@ import { PointerSize } from "../Globals"
 export class OatFile extends JSHandle {
 
     // const std::string location_;
-    location_ = this.CurrentHandle.add(0x0)
+    location_ = this.currentHandle
     // std::unique_ptr<VdexFile> vdex_;
     vdex_ = this.location_.add(PointerSize * 3)
     // const uint8_t* begin_;
@@ -44,12 +44,16 @@ export class OatFile extends JSHandle {
     // std::unique_ptr<std::vector<std::unique_ptr<const DexFile>>> uncompressed_dex_files_;
     uncompressed_dex_files_ = this.string_cache_.add(PointerSize)
 
-    constructor(ptr: NativePointer) {
-        super(ptr)
+    constructor(handle: NativePointer) {
+        super(handle)
     }
 
     get SizeOfClass(): number {
         return this.uncompressed_dex_files_.add(PointerSize).sub(this.CurrentHandle).toInt32()
+    }
+
+    get VirtualClassOffset(): number {
+        return PointerSize
     }
 
     get currentHandle(): NativePointer {
@@ -58,9 +62,14 @@ export class OatFile extends JSHandle {
 
     toString(): string {
         let disp: string = `OatFile<${this.handle}>`
-        disp += `\n\tlocation_: ${this.location}`
+        disp += `\n\tlocation_: ${this.location} @ ${this.location_}`
         disp += `\n\tbegin: ${this.begin} | end: ${this.end}`
         disp += `\n\tdata_bimg_rel_ro_begin: ${this.data_bimg_rel_ro_begin} | data_bimg_rel_ro_end: ${this.data_bimg_rel_ro_end}`
+        disp += `\n\tbss_begin: ${this.bss_begin} | bss_end: ${this.bss_end}`
+        disp += `\n\tbss_methods: ${this.bss_methods} | bss_roots: ${this.bss_roots}`
+        disp += `\n\tis_executable: ${this.is_executable}`
+        disp += `\n\tvdex_begin: ${this.vdex_begin} | vdex_end: ${this.vdex_end}`
+        disp += `\n\toat_dex_files_storage: ${this.oat_dex_files_storage} | oat_dex_files: ${this.oat_dex_files}`
         return disp
     }
 

@@ -403,8 +403,15 @@ export class ArtMethod extends JSHandle implements IArtMethod, SizeOfClass {
         LOGD(`GetRuntimeMethodName -> ${this.GetRuntimeMethodName()}`)
         // LOGD(`HasSameNameAndSignature -> ${this.HasSameNameAndSignature(art_1)}`)
         LOGD(`access_flags_string -> ${this.access_flags_string}`)
+        LOGD(`JniShortName -> ${this.JniShortName()}`)
+        LOGD(`JniLongName -> ${this.JniLongName()}`)
         LOGD(`GetQuickenedInfo -> ${this.GetQuickenedInfo()}`)
         LOGD(`entry_point_from_quick_compiled_code -> ${this.entry_point_from_quick_compiled_code}`)
+
+        newLine()
+        LOGD(this.GetDexFile())
+        LOGD(this.GetDexFile().oat_dex_file)
+        LOGD(this.GetDexFile().oat_dex_file.oat_file)
     }
 
     show = (num?: number) => {

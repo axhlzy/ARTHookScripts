@@ -15,7 +15,7 @@ globalThis.testArtMethod = () => {
 
 setImmediate(() => {
 
-    TraceManager.Trace_DefineClass()
+    // TraceManager.Trace_DefineClass()
     // TraceManager.Trace_OpenCommon()
 
 })

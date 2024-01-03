@@ -3,3 +3,4 @@
 import './DefineClass'
 import './SymbolManager'
 import './DefineClass'
+import './OpenCommon'
