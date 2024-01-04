@@ -1,4 +1,6 @@
+import { demangleName_onlyFunctionName as demangleName_ } from "../../tools/functions"
 import { JSHandle } from "../JSHandle"
+import { SymbolManager } from "../start/SymbolManager"
 
 declare global {
     function callSym<T>(sym: string, md: string, retType: NativeType, argTypes: NativeType[], ...args: any[]): T
@@ -23,7 +25,12 @@ function transformArgs(args: ArgType[], argTypes: NativeType[]): any[] {
 }
 
 export function callSym<T>(sym: string, md: string, retType: NativeType, argTypes: NativeType[], ...args: any[]): T {
-    const address: NativePointer | null = getSym(sym, md)
+    let address: NativePointer | null = getSym(sym, md)
+    if (address == null) {
+        let sym_ret: ModuleSymbolDetails = SymbolManager.SymbolFilter(null, demangleName_(sym))
+        if (sym_ret.type != "function") throw new Error(`symbol ${sym_ret.name} not a function [ ${sym_ret.type} ]`)
+        address = sym_ret.address
+    }
     return callSymLocal<T>(address, retType, argTypes, ...transformArgs(args, argTypes))
 }
 

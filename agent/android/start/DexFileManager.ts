@@ -40,7 +40,6 @@ const showDexFileInner = (dexFile: DexFile, index?: number, dump: boolean = fals
     LOGZ(`\tbegin = ${dexFile.begin} | size = ${dexFile.size} | data_begin = ${dexFile.data_begin} | data_size = ${dexFile.data_size}`)
     if (dump && dexFile.location.endsWith(".dex")) dexFile.dump()
     newLine()
-
 }
 
 const iterDexFile = (dump: boolean, onlyAppDex: boolean = true) => {

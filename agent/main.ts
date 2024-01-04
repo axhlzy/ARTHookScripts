@@ -1,4 +1,3 @@
-import { TraceManager } from "./android/TraceManager"
 import "./include"
 
 globalThis.testArtMethod = () => {
@@ -20,39 +19,6 @@ setImmediate(() => {
 
 })
 
-globalThis.testRegisterJavaClass = () => {
-
-    Java.performNow(() => {
-        const newClass = Java.registerClass({
-            // superClass: Java.use("java.lang.Object"),
-            name: "com.unity3d.player.test",
-            fields: {
-                a: "java.lang.String",
-                b: "java.lang.String",
-                c: "java.lang.String"
-            },
-            methods: {
-                ['onReward']: {
-                    returnType: 'void',
-                    argumentTypes: ['boolean'],
-                    implementation: function (z) {
-                        LOGD("onReward")
-                    }
-                },
-                ['toString']: {
-                    returnType: 'java.lang.String',
-                    argumentTypes: [],
-                    implementation: function () {
-                        return `val -> ${this.a.value} ${this.b.value} ${this.c.value}`
-                    }
-                }
-            }
-        })
-        LOGD(newClass.onReward)
-    })
-
-}
-
 globalThis.sendMessage = (a: string = "test_class", b: string = "test_function", c: string = "test_value") => {
     Java.perform(() => {
         const JavaString = Java.use("java.lang.String")
@@ -63,6 +29,5 @@ globalThis.sendMessage = (a: string = "test_class", b: string = "test_function",
 declare global {
     var testArtMethod: () => void
     var sendMessage: (a?: string, b?: string, c?: string) => void
-    var testRegisterJavaClass: () => void
 }
 

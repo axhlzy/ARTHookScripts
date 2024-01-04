@@ -1,4 +1,6 @@
-import { JSHandle } from "../../../../JSHandle"
+import { JSHandle } from "../../../JSHandle"
+
+// jetbrains://clion/navigate/reference?project=libart&path=oat_quick_method_header.h
 
 // private:
 // static constexpr uint32_t kShouldDeoptimizeMask = 0x80000000;

@@ -1,17 +1,17 @@
 
+import { CodeItemInstructionAccessor } from "../dexfile/CodeItemInstructionAccessor"
 import { IArtMethod } from "../../../../Interface/art/mirror/IArtMethod"
-import { OatQuickMethodHeader } from "../runtime/OatQuickMethodHeader"
 import { ArtModifiers } from "../../../../../tools/modifiers"
 import { StdString } from "../../../../../tools/StdString"
 import { InvokeType } from "../../../../../tools/enum"
 import { ArtInstruction } from "../Instruction"
 import { JSHandle } from "../../../../JSHandle"
+import { DexFile } from "../dexfile/DexFile"
 import { PointerSize } from "../Globals"
 import { ArtClass } from "./ArtClass"
 import { DexCache } from "./DexCache"
 import { GcRoot } from "../GcRoot"
-import { CodeItemInstructionAccessor } from "../dexfile/CodeItemInstructionAccessor"
-import { DexFile } from "../dexfile/DexFile"
+import { OatQuickMethodHeader } from "../OatQuickMethodHeader"
 
 export class ArtMethod extends JSHandle implements IArtMethod, SizeOfClass {
 
@@ -458,11 +458,22 @@ export class ArtMethod extends JSHandle implements IArtMethod, SizeOfClass {
 
         let num_local: number = 0
         let code_offset: number = 0
+        let errorFlag: boolean = false
         while (++num_local < num) {
             let indexStr: string = `[${num_local.toString().padStart(4, ' ')}|${ptr(code_offset).toString().padEnd(5, ' ')}]`
-            LOGD(`${indexStr} ${insns.address}\t${insns.toString()}`)
+            !errorFlag ? LOGD(`${indexStr} ${insns.address}\t${insns.toString()}`) : function () {
+                const bt: ArrayBuffer = insns.address.readByteArray(4)
+                const btStr: string = Array.from(new Uint8Array(bt)).map((item: number) => item.toString(16).padStart(2, '0')).join(' ')
+                LOGE(`${indexStr} ${insns.address}\t${btStr} <--- ERROR`)
+            }()
             code_offset += insns.size
-            insns = Instruction.parse(insns.next)
+            try {
+                insns = Instruction.parse(insns.next)
+                errorFlag = false
+            } catch (error) {
+                insns = Instruction.parse(insns.address.add(PointerSize))
+                errorFlag = true
+            }
             // todo 这里的num后续可以省略，使用栈寄存器判断平栈的位置作为函数结束的位置
             // 还需要去了解一下oat文件格式，配合一些其他的信息来添加上更多的一些符号信息以便于提高可读性
             // 解析出更多信息后是不是可以考虑在进入这个函数的时候判断当前函数是否已经被oat然后决定实现javahook的方式直接去hook已经编译好的oat文件

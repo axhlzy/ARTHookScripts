@@ -1,48 +1,55 @@
 export class SymbolManager {
 
-    get artModule(): Module {
+    static get artModule(): Module {
         return Process.getModuleByName("libart.so")!
     }
 
-    get artBaseAddress(): NativePointer {
+    static get artBaseAddress(): NativePointer {
         return Module.findBaseAddress("libart.so")
     }
 
-    get artSymbol(): ModuleSymbolDetails[] {
+    static get artSymbol(): ModuleSymbolDetails[] {
         return this.artModule.enumerateSymbols()
     }
 
     public artSymbolFilter(filterStrs: string[], excludefilterStrs?: string[]): ModuleSymbolDetails {
-        return SymbolManager.symbolFilter(this.artSymbol, filterStrs, excludefilterStrs)
+        return SymbolManager.symbolFilter(SymbolManager.artSymbol, filterStrs, excludefilterStrs)
     }
 
-    get dexDileModule(): Module {
+    static get dexDileModule(): Module {
         return Process.getModuleByName("libdexfile.so")
     }
 
-    get dexfileAddress(): NativePointer {
+    static get dexfileAddress(): NativePointer {
         return Module.findBaseAddress("libdexfile.so")
     }
 
-    get dexfileSymbol(): ModuleSymbolDetails[] {
+    static get dexfileSymbol(): ModuleSymbolDetails[] {
         return this.dexDileModule.enumerateSymbols()
     }
 
     public dexfileSymbolFilter(filterStrs: string[], excludefilterStrs?: string[]): ModuleSymbolDetails {
-        return SymbolManager.symbolFilter(this.dexfileSymbol, filterStrs, excludefilterStrs)
+        return SymbolManager.symbolFilter(SymbolManager.dexfileSymbol, filterStrs, excludefilterStrs)
     }
 
-    private SymbolFilter(module: Module | string, filterStrs: string[]): ModuleSymbolDetails {
+    public static SymbolFilter(moduleName: Module | string | null, filterStrs?: string[], excludefilterStrs?: string[]): ModuleSymbolDetails {
         let localMd: Module = null
-        if (typeof module == "string") {
-            localMd = Process.getModuleByName(module)!
-        } else if (module instanceof Module) {
-            localMd = module
+        if (moduleName == null || moduleName == undefined) {
+            let syms: ModuleSymbolDetails = SymbolManager.symbolFilter(this.artSymbol, filterStrs, excludefilterStrs, false)
+            if (syms == null) syms = SymbolManager.symbolFilter(this.dexfileSymbol, filterStrs, excludefilterStrs, false)
+            if (syms == null) throw new Error("can not find symbol")
+            return syms
+        } else {
+            if (typeof moduleName == "string") {
+                localMd = Process.getModuleByName(moduleName)!
+            } else if (moduleName instanceof Module) {
+                localMd = moduleName
+            }
+            return SymbolManager.symbolFilter(localMd.enumerateSymbols(), filterStrs)
         }
-        return SymbolManager.symbolFilter(localMd.enumerateSymbols(), filterStrs)
     }
 
-    private static symbolFilter(mds: ModuleSymbolDetails[], containfilterStrs: string[], excludefilterStrs: string[] = []): ModuleSymbolDetails {
+    private static symbolFilter(mds: ModuleSymbolDetails[], containfilterStrs: string[], excludefilterStrs: string[] = [], withError: boolean = true): ModuleSymbolDetails {
         let ret = mds.filter((item: ModuleSymbolDetails) => {
             return containfilterStrs.every((filterStr: string) => {
                 return item.name.indexOf(filterStr) != -1
@@ -54,7 +61,8 @@ export class SymbolManager {
             })
         })
         if (ret.length == 0) {
-            throw new Error("can not find symbol")
+            if (withError) throw new Error("can not find symbol")
+            else LOGE("can not find symbol")
         }
         if (ret.length > 1) {
             LOGW(`find too many symbol, just ret first | size : ${ret.length}`)

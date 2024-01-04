@@ -34,9 +34,3 @@ export class ArtObject extends JSHandle implements SizeOfClass {
     }
 
 }
-
-declare global {
-    var ArtObject: any
-}
-
-globalThis.ArtObject = ArtObject
