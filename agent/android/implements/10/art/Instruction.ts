@@ -2,6 +2,8 @@ import { StdString } from "../../../../tools/StdString"
 import { JSHandle } from "../../../JSHandle"
 import { DexFile } from "./dexfile/DexFile"
 
+const DEBUG_LOG: boolean = false
+
 export class ArtInstruction extends JSHandle {
 
     // _ZN3art11Instruction17kInstructionNamesE
@@ -29,10 +31,10 @@ export class ArtInstruction extends JSHandle {
         const arrary_ret: InstructionDescriptor[] = []
         let loopAddaddress: NativePointer = kInstructionDescriptors_ptr
         let counter = 0xFF // 256
-        let index = 0
+        if (DEBUG_LOG) var index = 0
         while (counter-- > 0) {
             arrary_ret.push(new InstructionDescriptor(loopAddaddress))
-            LOGZ(`${++index} ${new InstructionDescriptor(loopAddaddress)}`)
+            if (DEBUG_LOG) LOGZ(`${++index} ${new InstructionDescriptor(loopAddaddress)}`)
             loopAddaddress = loopAddaddress.add(InstructionDescriptor.SizeOfClass)
         }
         ArtInstruction.cached_kInstructionDescriptors = new Array(...arrary_ret)
@@ -111,7 +113,7 @@ export class ArtInstruction extends JSHandle {
         const opcode: number = this.Fetch16()
         // LOGZ(`opcode: ${ptr(opcode)} ${opcode} | ${ArtInstruction.kInstructionDescriptors[opcode]} | ${ArtInstruction.kInstructionNames[opcode]}`)
         // LOGZ(ArtInstruction.InstructionGroup[opcode][1].size_in_code_units)
-        let result: number = (ArtInstruction.kInstructionDescriptors[opcode].size_in_code_units)
+        let result: number = (ArtInstruction.InstructionGroup[opcode][1].size_in_code_units)
         if (result < 0) {
             let ret = this.sizeInCodeUnitsComplexOpcode() * 0x2
             return ret

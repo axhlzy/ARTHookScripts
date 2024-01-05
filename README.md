@@ -48,6 +48,31 @@ BUILD_ID=QP1A.191005.007.A3
 
 - 中间顺带处理一下dex2oat对dex优化流程的尝试
 
+- TODO
+  ```
+   [AOSP on msm8996::com.xxx.xxx ]->  pathToArtMethod("com.unity3d.player.UnityPlayer.addPhoneCallListener").showSmali()
+   ↓dex_file↓
+   DexFile<0xe8ffe520>
+            location: /data/app/com.gzcc.xbzc-s_aRcJlPwvVinch43dmvmw==/base.apk!classes4.dex
+            location_checksum: 545562129 ( 0x20849e11 ) is_compact_dex: false
+            begin: 0xc771b808 size: 7865800 ( 0x7805c8 ) | data_begin: 0xc771b808 data_size: 7865800 ( 0x7805c8 )
+            oat_dex_file_ 0xe8ffe578
+   
+   👉 0xd1413f7c -> protected void com.unity3d.player.UnityPlayer.addPhoneCallListener()
+   quickCode: 0xef450581 -> art_quick_to_interpreter_bridge @ libart.so | jniCode: null | accessFlags: 0x18080004 | size: 0x1c
+   
+   [  1|0x0  ] 0xc7dcf1ac - 1 - 1210            | const/4 v0, #+1
+   [  2|0x2  ] 0xc7dcf1ae - 2 - eb30 0803       | iput-boolean-quick v0, v3, thing@776
+   [  3|0x6  ] 0xc7dcf1b2 - 2 - e530 ec02       | iget-object-quick v0, v3, // offset@748
+   [  4|0xa  ] 0xc7dcf1b6 - 2 - e531 e402       | iget-object-quick v1, v3, // offset@740
+   [  5|0xe  ] 0xc7dcf1ba - 2 - 1302 2000       | const/16 v2, #+32
+   [  6|0x12 ] 0xc7dcf1be - 3 - e930 1401 1002  | invoke-virtual-quick {v0, v1, v2},  // vtable@276
+   [  7|0x18 ] 0xc7dcf1c4 - 1 - 7300            | return-void-no-barrier
+
+  // 解析 offset@748
+  // 解析 vtable@276
+   ```
+
 
 
 showOatAsm
