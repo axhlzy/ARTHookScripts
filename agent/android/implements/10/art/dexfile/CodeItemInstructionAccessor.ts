@@ -31,18 +31,22 @@ export class CodeItemInstructionAccessor extends JSHandle implements SizeOfClass
 
     toString(): String {
         let disp: string = `CodeItemInstructionAccessor<${this.handle}>`
-        disp += `\ninsns_size_in_code_units: ${this.insns_size_in_code_units} | insns_: ${this.insns}`
+        disp += `\ninsns_size_in_code_units: ${this.insns_size_in_code_units} | insns: ${this.insns}`
         return disp
+    }
+
+    public static CodeItem(dexFile: DexFile, dex_pc: NativePointer): CompactDexFile_CodeItem | StandardDexFile_CodeItem {
+        return dexFile.is_compact_dex ? new CompactDexFile_CodeItem(dex_pc) : new StandardDexFile_CodeItem(dex_pc)
     }
 
     public static fromDexFile(dexFile: DexFile, dex_pc: NativePointer): CodeItemInstructionAccessor {
         const accessor = new CodeItemInstructionAccessor()
         if (dexFile.is_compact_dex) {
-            const codeItem = new CompactDexFile_CodeItem(dex_pc)
+            const codeItem: CompactDexFile_CodeItem = CodeItemInstructionAccessor.CodeItem(dexFile, dex_pc) as CompactDexFile_CodeItem
             accessor.insns_size_in_code_units = ptr(codeItem.insns_count_and_flags).shr(kInsnsSizeShift).toUInt32()
             accessor.insns = codeItem.insns_
         } else {
-            const codeItem = new StandardDexFile_CodeItem(dex_pc)
+            const codeItem: StandardDexFile_CodeItem = CodeItemInstructionAccessor.CodeItem(dexFile, dex_pc) as StandardDexFile_CodeItem
             accessor.insns_size_in_code_units = codeItem.insns_size_in_code_units
             accessor.insns = codeItem.insns_
         }

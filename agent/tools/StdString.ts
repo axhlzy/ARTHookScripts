@@ -1,5 +1,3 @@
-import { PointerSize } from "../android/implements/10/art/Globals"
-
 export class StdString {
 
     private static STD_STRING_SIZE = 3 * Process.pointerSize
@@ -16,7 +14,7 @@ export class StdString {
     }
 
     static fromPointer(ptrs: NativePointer): string {
-        return StdString.fromPointers([ptrs, ptrs.add(PointerSize), ptrs.add(PointerSize * 2)])
+        return StdString.fromPointers([ptrs, ptrs.add(Process.pointerSize), ptrs.add(Process.pointerSize * 2)])
     }
 
     static fromPointers(ptrs: NativePointer[]): string {
@@ -24,7 +22,11 @@ export class StdString {
         return StdString.fromPointersRetInstance(ptrs).disposeToString()
     }
 
-    static fromPointersRetInstance(ptrs: NativePointer[]): StdString {
+    static from(pointer: NativePointer) {
+        return pointer.add(Process.pointerSize * 2).readCString()
+    }
+
+    private static fromPointersRetInstance(ptrs: NativePointer[]): StdString {
         if (ptrs.length != 3) return new StdString()
         const stdString = new StdString()
         stdString.handle.writePointer(ptrs[0])
@@ -42,9 +44,9 @@ export class StdString {
     toString(): string {
         try {
             const data: NativePointer = this._getData()[0] as NativePointer
-            return data.readCString()
+            return data.readUtf8String()
         } catch (error) {
-            return 'ERROR'
+            return StdString.from(this.handle.add(Process.pointerSize * 2))
         }
     }
 

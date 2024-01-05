@@ -13,9 +13,9 @@ export class CompactDexFile_CodeItem extends DexFile_CodeItem {
     // uint16_t fields_;
     fields_ = this.CurrentHandle
     // uint16_t insns_count_and_flags_;
-    insns_count_and_flags_ = this.CurrentHandle.add(0x2 * 1)
+    insns_count_and_flags_ = this.fields_.add(0x2)
     // uint16_t insns_[1];
-    insns_ = this.CurrentHandle.add(0x2 * 2)
+    insns_ = this.insns_count_and_flags_.add(0x2)
 
     constructor(dex_pc: NativePointer) {
         super(dex_pc)
@@ -23,7 +23,7 @@ export class CompactDexFile_CodeItem extends DexFile_CodeItem {
 
     toString(): String {
         let disp: string = `CompactDexFile::CodeItem<${this.handle}>`
-        disp += `\nfields_: ${this.fields} | insns_count_and_flags_: ${this.insns_count_and_flags} | insns_: ${this.insns}`
+        disp += `\nfields: ${this.fields} | insns_count_and_flags: ${this.insns_count_and_flags} | insns: ${this.insns}`
         return disp
     }
 

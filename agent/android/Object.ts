@@ -17,7 +17,7 @@ export class ArtObject extends JSHandle implements SizeOfClass {
         this.monitor_ = this.handle.add(PointerSize) // 0x4
     }
 
-    get currentHandle(): NativePointer {
+    get CurrentHandle(): NativePointer {
         return this.handle.add(super.SizeOfClass)
     }
 

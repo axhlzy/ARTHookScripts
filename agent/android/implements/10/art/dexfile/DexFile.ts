@@ -2,7 +2,9 @@ import { StdString } from "../../../../../tools/StdString"
 import { JSHandle } from "../../../../JSHandle"
 import { OatDexFile } from "../Oat/OatDexFile"
 import { PointerSize } from "../Globals"
-
+import { DexHeader } from "./Header"
+import { DexTypeIndex } from "./DexIndex"
+import { DexClassDef, DexTryItem } from "./DexFileStructs"
 
 // virtual class DexFile;
 export class DexFile extends JSHandle {
@@ -112,73 +114,21 @@ export class DexFile extends JSHandle {
 
     toString(): String {
         let disp: String = `DexFile<${this.handle}>`
-        disp += `\n\t location: ${this.location}`
+        if (this.handle.isNull()) return disp
+        disp += `\n\t location: ${this.location} @ ${this.location_}`
         disp += `\n\t location_checksum: ${this.location_checksum} ( ${ptr(this.location_checksum)} ) is_compact_dex: ${this.is_compact_dex}`
         disp += `\n\t begin: ${this.begin} size: ${this.size} ( ${ptr(this.size)} ) | data_begin: ${this.data_begin} data_size: ${this.data_size} ( ${ptr(this.data_size)} )`
-        disp += `\n\t oat_dex_file_ ${this.oat_dex_file_}`
+        disp += `\n\t oat_dex_file_ ${this.oat_dex_file_} | header_: ${this.header}`
+        disp += `\n\t string_ids: ${this.string_ids}`
+        disp += `\n\t type_ids: ${this.type_ids}`
+        disp += `\n\t field_ids: ${this.field_ids}`
+        disp += `\n\t method_ids: ${this.method_ids}`
+        disp += `\n\t proto_ids: ${this.proto_ids}`
+        disp += `\n\t class_defs: ${this.class_defs}`
+        disp += `\n\t method_handles: ${this.method_handles} num_method_handles: ${this.num_method_handles}`
+        disp += `\n\t call_site_ids: ${this.call_site_ids} num_call_site_ids: ${this.num_call_site_ids}`
+        disp += `\n\t hiddenapi_class_data: ${this.hiddenapi_class_data}`
         return disp
-    }
-
-    // ALWAYS_INLINE std::string PrettyMethod(uint32_t method_idx, bool with_signature = true) const {
-    //     std::string result;
-    //     AppendPrettyMethod(method_idx, with_signature, &result);
-    //     return result;
-    //   }
-    // _ZNK3art7DexFile12PrettyMethodEjb
-    PrettyMethod(method_idx: number, with_signature: boolean = true): string {
-        // const PrettyMethodAddr = Module.findExportByName("libdexfile.so", "_ZNK3art7DexFile12PrettyMethodEjb")!
-        // const PrettyMethod = new NativeFunction(PrettyMethodAddr, "pointer", ["pointer", "pointer", "pointer"])
-        // return new StdString(PrettyMethod(this.handle, ptr(method_idx), with_signature ? ptr(1) : NULL) as NativePointer).disposeToString()
-        return new StdString(callSym<NativePointer>(
-            "_ZNK3art7DexFile12PrettyMethodEjb", "libdexfile.so",
-            "pointer", ["pointer", "pointer", "pointer"],
-            this.handle, ptr(method_idx), with_signature ? ptr(1) : NULL)
-        ).disposeToString()
-    }
-
-    // _ZNK3art7DexFile17CalculateChecksumEv
-    // virtual uint32_t CalculateChecksum() const;
-    CalculateChecksum(): number {
-        return callSym<number>(
-            "_ZNK3art7DexFile17CalculateChecksumEv", "libdexfile.so",
-            "uint32", ["pointer"],
-            this.handle)
-    }
-
-    // _ZNK3art7DexFile10IsReadOnlyEv
-    // bool IsReadOnly() const;
-    IsReadOnly(): boolean {
-        return callSym<boolean>(
-            "_ZNK3art7DexFile10IsReadOnlyEv", "libdexfile.so",
-            "bool", ["pointer"],
-            this.handle)
-    }
-
-    // _ZNK3art7DexFile12DisableWriteEv
-    // bool DisableWrite() const;
-    DisableWrite(): boolean {
-        return callSym<boolean>(
-            "_ZNK3art7DexFile12DisableWriteEv", "libdexfile.so",
-            "bool", ["pointer"],
-            this.handle)
-    }
-
-    // _ZNK3art7DexFile11EnableWriteEv
-    // bool EnableWrite() const;
-    EnableWrite(): boolean {
-        return callSym<boolean>(
-            "_ZNK3art7DexFile11EnableWriteEv", "libdexfile.so",
-            "bool", ["pointer"],
-            this.handle)
-    }
-
-    // _ZNK3art7DexFile10PrettyTypeENS_3dex9TypeIndexE
-    // std::string PrettyType(dex::TypeIndex type_idx) const;
-    PrettyType(type_idx: number): string {
-        return callSym<string>(
-            "_ZNK3art7DexFile10PrettyTypeENS_3dex9TypeIndexE", "libdexfile.so",
-            "pointer", ["pointer", "pointer"],
-            this.handle, ptr(type_idx))
     }
 
     get begin(): NativePointer {
@@ -209,8 +159,8 @@ export class DexFile extends JSHandle {
         return this.location_checksum_.readU32()
     }
 
-    get header(): NativePointer {
-        return this.header_.readPointer()
+    get header(): DexHeader {
+        return new DexHeader(this.header_.readPointer())
     }
 
     get string_ids(): NativePointer {
@@ -291,6 +241,104 @@ export class DexFile extends JSHandle {
         let localPath = path == undefined ? getFilesDir() : path
         dumpMem(this.begin, this.size, localName, localPath, false)
         LOGZ(`\t[SaveTo] => ${localPath}/${localName}`)
+    }
+
+    // ALWAYS_INLINE std::string PrettyMethod(uint32_t method_idx, bool with_signature = true) const {
+    //     std::string result;
+    //     AppendPrettyMethod(method_idx, with_signature, &result);
+    //     return result;
+    //   }
+    // _ZNK3art7DexFile12PrettyMethodEjb
+    PrettyMethod(method_idx: number, with_signature: boolean = true): string {
+        // const PrettyMethodAddr = Module.findExportByName("libdexfile.so", "_ZNK3art7DexFile12PrettyMethodEjb")!
+        // const PrettyMethod = new NativeFunction(PrettyMethodAddr, "pointer", ["pointer", "pointer", "pointer"])
+        // return new StdString(PrettyMethod(this.handle, ptr(method_idx), with_signature ? ptr(1) : NULL) as NativePointer).disposeToString()
+        return new StdString(callSym<NativePointer>(
+            "_ZNK3art7DexFile12PrettyMethodEjb", "libdexfile.so",
+            "pointer", ["pointer", "pointer", "pointer"],
+            this.handle, ptr(method_idx), with_signature ? ptr(1) : NULL)
+        ).disposeToString()
+    }
+
+    // _ZNK3art7DexFile17CalculateChecksumEv
+    // virtual uint32_t CalculateChecksum() const;
+    CalculateChecksum(): number {
+        return callSym<number>(
+            "_ZNK3art7DexFile17CalculateChecksumEv", "libdexfile.so",
+            "uint32", ["pointer"],
+            this.handle)
+    }
+
+    // _ZNK3art7DexFile10IsReadOnlyEv
+    // bool IsReadOnly() const;
+    IsReadOnly(): boolean {
+        return callSym<boolean>(
+            "_ZNK3art7DexFile10IsReadOnlyEv", "libdexfile.so",
+            "bool", ["pointer"],
+            this.handle)
+    }
+
+    // _ZNK3art7DexFile12DisableWriteEv
+    // bool DisableWrite() const;
+    DisableWrite(): boolean {
+        return callSym<boolean>(
+            "_ZNK3art7DexFile12DisableWriteEv", "libdexfile.so",
+            "bool", ["pointer"],
+            this.handle)
+    }
+
+    // _ZNK3art7DexFile11EnableWriteEv
+    // bool EnableWrite() const;
+    EnableWrite(): boolean {
+        return callSym<boolean>(
+            "_ZNK3art7DexFile11EnableWriteEv", "libdexfile.so",
+            "bool", ["pointer"],
+            this.handle)
+    }
+
+    // _ZNK3art7DexFile10PrettyTypeENS_3dex9TypeIndexE
+    // std::string PrettyType(dex::TypeIndex type_idx) const;
+    PrettyType(type_idx: DexTypeIndex): string {
+        return callSym<string>(
+            "_ZNK3art7DexFile10PrettyTypeENS_3dex9TypeIndexE", "libdexfile.so",
+            "pointer", ["pointer", "pointer"],
+            this.handle, type_idx.index)
+    }
+
+    // static int32_t FindTryItem(const dex::TryItem* try_items, uint32_t tries_size, uint32_t address)
+    // _ZN3art7DexFile11FindTryItemEPKNS_3dex7TryItemEjj
+    static FindTryItem(try_items: DexTryItem, tries_size: number, address: number): number {
+        return callSym<number>(
+            "_ZN3art7DexFile11FindTryItemEPKNS_3dex7TryItemEjj", "libdexfile.so",
+            "int32", ["pointer", "uint", "uint"],
+            try_items.handle, tries_size, address)
+    }
+
+    // const StringId* DexFile::FindStringId(const char* string) const 
+    // _ZNK3art7DexFile12FindStringIdEPKc
+    FindStringId(string: string): NativePointer {
+        return callSym<NativePointer>(
+            "_ZNK3art7DexFile12FindStringIdEPKc", "libdexfile.so",
+            "pointer", ["pointer", "pointer"],
+            this.handle, Memory.allocUtf8String(string))
+    }
+
+    // const ClassDef* DexFile::FindClassDef(dex::TypeIndex type_idx) const
+    // _ZNK3art7DexFile12FindClassDefENS_3dex9TypeIndexE
+    FindClassDef(type_idx: DexTypeIndex): NativePointer {
+        return callSym<NativePointer>(
+            "_ZNK3art7DexFile12FindClassDefENS_3dex9TypeIndexE", "libdexfile.so",
+            "pointer", ["pointer", "pointer"],
+            this.handle, type_idx.index)
+    }
+
+    // uint32_t DexFile::FindCodeItemOffset(const ClassDef& class_def, uint32_t method_idx) const 
+    // _ZNK3art7DexFile18FindCodeItemOffsetERKNS_3dex8ClassDefEj
+    FindCodeItemOffset(class_def: DexClassDef, method_idx: number): number {
+        return callSym<number>(
+            "_ZNK3art7DexFile18FindCodeItemOffsetERKNS_3dex8ClassDefEj", "libdexfile.so",
+            "uint32", ["pointer", "pointer", "uint"],
+            this.handle, class_def.handle, method_idx)
     }
 
 }

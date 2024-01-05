@@ -45,26 +45,32 @@ export class DexCache extends ArtObject implements SizeOfClass {
     }
 
     toString(): String {
-        let disp: string = `DexCache<P:${this.handle}|C:${this.currentHandle}>`
-        disp += `\nlocation: ${ptr(this.location_.readU32()).add(PointerSize * 2).readCString()}`
-        disp += `\npreresolved_strings_: ${this.preresolved_strings} | num_preresolved_strings_: ${this.num_preresolved_strings} | resolved_call_sites_: ${this.resolved_call_sites}`
-        disp += `\nresolved_fields_: ${this.resolved_fields} | resolved_methods_: ${this.resolved_methods} | resolved_types_: ${this.resolved_types}`
-        disp += `\nstrings_: ${this.strings} | num_resolved_call_sites_: ${this.num_resolved_call_sites} | num_resolved_fields_: ${this.num_resolved_fields}`
-        disp += `\nnum_resolved_method_types_: ${this.num_resolved_method_types} | num_resolved_methods_: ${this.num_resolved_methods} | num_resolved_types_: ${this.num_resolved_types}`
-        disp += `\nnum_strings_: ${this.num_strings}`
+        let disp: string = `DexCache<P:${this.handle} | C:${this.currentHandle}>`
+        if (this.handle.isNull()) return disp
+        disp += `\n\t location: ${this.location_str} @ ${this.location.root.handle}`
+        disp += `\n\t preresolved_strings_: ${this.preresolved_strings} | num_preresolved_strings_: ${this.num_preresolved_strings} | resolved_call_sites_: ${this.resolved_call_sites}`
+        disp += `\n\t resolved_fields_: ${this.resolved_fields} | resolved_methods_: ${this.resolved_methods} | resolved_types_: ${this.resolved_types}`
+        disp += `\n\t strings_: ${this.strings} | num_resolved_call_sites_: ${this.num_resolved_call_sites} | num_resolved_fields_: ${this.num_resolved_fields}`
+        disp += `\n\t num_resolved_method_types_: ${this.num_resolved_method_types} | num_resolved_methods_: ${this.num_resolved_methods} | num_resolved_types_: ${this.num_resolved_types}`
+        disp += `\n\t num_strings_: ${this.num_strings}`
         return disp
     }
 
     get SizeOfClass(): number {
-        return super.SizeOfClass + (PointerSize * 8 + 0x4 * 6)
+        return super.SizeOfClass + this.num_strings_.add(0x4).sub(this.CurrentHandle).toInt32()
     }
 
     get currentHandle(): NativePointer {
         return this.handle.add(super.SizeOfClass).add(this.VirtualClassOffset)
     }
 
+    // HeapReference contains StdString -> The Third Pointer don't need read
     get location(): HeapReference<StdString> {
         return new HeapReference(handle => new StdString(handle), this.location_)
+    }
+
+    private get location_str(): string {
+        return StdString.from(this.location.root.handle)
     }
 
     get num_preresolved_strings(): number {

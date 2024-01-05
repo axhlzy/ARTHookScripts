@@ -11,53 +11,71 @@ export class ArtClass extends ArtObject implements SizeOfClass {
     isVirtualClass: boolean = false
 
     // HeapReference<ClassLoader> class_loader_;
-    class_loader_ = this.currentHandle
+    class_loader_ = this.CurrentHandle
     // HeapReference<Class> component_type_;
-    component_type_ = this.currentHandle.add(HeapReference.Size * 1)
+    component_type_ = this.class_loader_.add(HeapReference.Size)
     // HeapReference<DexCache> dex_cache_;
-    dex_cache_ = this.currentHandle.add(HeapReference.Size * 2)
+    dex_cache_ = this.component_type_.add(HeapReference.Size)
     // HeapReference<ClassExt> ext_data_;
-    ext_data_ = this.currentHandle.add(HeapReference.Size * 3)
+    ext_data_ = this.dex_cache_.add(HeapReference.Size)
     // HeapReference<IfTable> iftable_;
-    iftable_ = this.currentHandle.add(HeapReference.Size * 4)
+    iftable_ = this.ext_data_.add(HeapReference.Size)
     // HeapReference<String> name_;
-    name_ = this.currentHandle.add(HeapReference.Size * 5)
+    name_ = this.iftable_.add(HeapReference.Size)
     // HeapReference<Class> super_class_;
-    super_class_ = this.currentHandle.add(HeapReference.Size * 6)
+    super_class_ = this.name_.add(HeapReference.Size)
     // HeapReference<PointerArray> vtable_;
-    vtable_ = this.currentHandle.add(HeapReference.Size * 7)
+    vtable_ = this.super_class_.add(HeapReference.Size)
     // ArtFields are allocated as a length prefixed ArtField array, and not an array of pointers to ArtFields.
     // uint64_t ifields_; => instance fields
-    ifields_ = this.currentHandle.add(HeapReference.Size * 8)
+    ifields_ = this.vtable_.add(HeapReference.Size)
     // uint64_t methods_;
-    methods_ = this.currentHandle.add(HeapReference.Size * 8 + 0x8 * 1)
+    methods_ = this.ifields_.add(0x8)
     // uint64_t sfields_;
-    sfields_ = this.currentHandle.add(HeapReference.Size * 8 + 0x8 * 2)
+    sfields_ = this.methods_.add(0x8)
     // uint32_t access_flags_;
-    access_flags_ = this.currentHandle.add(HeapReference.Size * 8 + 0x8 * 2 + 0x4 * 1)
+    access_flags_ = this.sfields_.add(0x8)
     // uint32_t class_flags_;
-    class_flags_ = this.currentHandle.add(HeapReference.Size * 8 + 0x8 * 2 + 0x4 * 2)
+    class_flags_ = this.access_flags_.add(0x4)
     // uint32_t class_size_;
-    class_size_ = this.currentHandle.add(HeapReference.Size * 8 + 0x8 * 2 + 0x4 * 3)
+    class_size_ = this.class_flags_.add(0x4)
     // pid_t clinit_thread_id_;
-    clinit_thread_id_ = this.currentHandle.add(HeapReference.Size * 8 + 0x8 * 2 + 0x4 * 4)
+    clinit_thread_id_ = this.class_size_.add(0x4)
     // int32_t dex_class_def_idx_;
-    dex_class_def_idx_ = this.currentHandle.add(HeapReference.Size * 8 + 0x8 * 3 + 0x4 * 4)
+    dex_class_def_idx_ = this.clinit_thread_id_.add(0x8)
 
     constructor(handle: NativePointer) {
         super(handle)
     }
 
     get SizeOfClass(): number {
-        return super.SizeOfClass + (HeapReference.Size * 8 + 64 * 3 + 32 * 5)
+        return (this.dex_class_def_idx_).add(0x4).sub(this.CurrentHandle).add(this.super_class.SizeOfClass).toInt32()
     }
 
-    get currentHandle(): NativePointer {
-        return this.handle.add(super.SizeOfClass)
+    get CurrentHandle(): NativePointer {
+        return this.handle.add(super.SizeOfClass).add(this.VirtualClassOffset)
     }
 
     toString(): String {
-        return `ArtClass< ${this.handle} >`
+        let disp: string = `ArtClass< ${this.handle} >`
+        if (this.handle.isNull()) return disp
+        disp += `\n\t class_loader: ${this.class_loader} => ArtClassLoader< ${this.class_loader.root.handle} >`
+        disp += `\n\t component_type: ${this.component_type} => ArtClass< ${this.component_type.root.handle} >`
+        disp += `\n\t dex_cache: ${this.dex_cache} => DexCache<P:${this.dex_cache.root.handle} >`
+        disp += `\n\t ext_data: ${this.ext_data}`
+        disp += `\n\t iftable: ${this.iftable}`
+        disp += `\n\t name: ${this.name} => ${this.name_str}`
+        disp += `\n\t super_class: ${this.super_class} => ArtClass< ${this.super_class.root.handle} >`
+        disp += `\n\t vtable: ${this.vtable}`
+        disp += `\n\t ifields: ${this.ifields} | ${ptr(this.ifields)}`
+        disp += `\n\t methods: ${this.methods} | ${ptr(this.methods)}`
+        disp += `\n\t sfields: ${this.sfields} | ${ptr(this.sfields)}`
+        disp += `\n\t access_flags: ${this.access_flags} => ${this.access_flags_string}`
+        disp += `\n\t class_flags: ${this.class_flags}`
+        disp += `\n\t class_size: ${this.class_size}`
+        disp += `\n\t clinit_thread_id: ${this.clinit_thread_id}`
+        disp += `\n\t dex_class_def_idx: ${this.dex_class_def_idx}`
+        return disp
     }
 
     get class_loader(): HeapReference<ArtClassLoader> {
@@ -82,6 +100,10 @@ export class ArtClass extends ArtObject implements SizeOfClass {
 
     get name(): HeapReference<StdString> {
         return new HeapReference((handle) => new StdString(handle), this.name_)
+    }
+
+    private name_str(): string {
+        return StdString.from(this.name.root.handle)
     }
 
     get super_class(): HeapReference<ArtClass> {

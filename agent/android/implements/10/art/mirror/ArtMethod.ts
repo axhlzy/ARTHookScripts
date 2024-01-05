@@ -1,17 +1,19 @@
 
 import { CodeItemInstructionAccessor } from "../dexfile/CodeItemInstructionAccessor"
 import { IArtMethod } from "../../../../Interface/art/mirror/IArtMethod"
+import { StandardDexFile_CodeItem } from "../dexfile/StandardDexFile"
+import { CompactDexFile_CodeItem } from "../dexfile/CompactDexFile"
+import { OatQuickMethodHeader } from "../OatQuickMethodHeader"
 import { ArtModifiers } from "../../../../../tools/modifiers"
 import { StdString } from "../../../../../tools/StdString"
 import { InvokeType } from "../../../../../tools/enum"
-import { ArtInstruction } from "../Instruction"
 import { JSHandle } from "../../../../JSHandle"
+import { ArtInstruction } from "../Instruction"
 import { DexFile } from "../dexfile/DexFile"
 import { PointerSize } from "../Globals"
 import { ArtClass } from "./ArtClass"
 import { DexCache } from "./DexCache"
 import { GcRoot } from "../GcRoot"
-import { OatQuickMethodHeader } from "../OatQuickMethodHeader"
 
 export class ArtMethod extends JSHandle implements IArtMethod, SizeOfClass {
 
@@ -157,8 +159,19 @@ export class ArtMethod extends JSHandle implements IArtMethod, SizeOfClass {
     }
 
     toString(): string {
-        const PrettyJavaAccessFlagsStr: string = PrettyAccessFlags(ptr(this.handle.add(getArtMethodSpec().offset.accessFlags).readU32()))
-        return `${this.handle} -> ${PrettyJavaAccessFlagsStr}${this.prettyMethod()}`
+        let disp: string = `ArtMethod< ${this.handle} >`
+        disp += `\n\t ${this.methodName}`
+        if (this.handle.isNull()) return disp
+        disp += `\n\t declaring_class: ${this.declaring_class} => ArtClass< ${this.declaring_class.root.handle} >`
+        disp += `\n\t access_flags: ${this.access_flags} => ${this.access_flags_string}`
+        disp += `\n\t dex_code_item_offset: ${this.dex_code_item_offset} | ${ptr(this.dex_code_item_offset)} => ${this.GetCodeItem()}`
+        disp += `\n\t dex_method_index: ${this.dex_method_index} | ${ptr(this.dex_method_index)}`
+        disp += `\n\t method_index: ${this.method_index} | ${ptr(this.method_index)}`
+        disp += `\n\t hotness_count: ${this.hotness_count} | ${ptr(this.hotness_count)}`
+        disp += `\n\t imt_index: ${this.imt_index} | ${ptr(this.imt_index)}`
+        disp += `\n\t data: ${this.data} | ${this.ptr_sized_fields_.data_}`
+        disp += `\n\t jniCode: ${this.jniCode} | ${this.ptr_sized_fields_.entry_point_from_quick_compiled_code_}`
+        return disp
     }
 
     getInfo(): string {
@@ -248,9 +261,14 @@ export class ArtMethod extends JSHandle implements IArtMethod, SizeOfClass {
         }
     }
 
+    get methodName(): string {
+        const PrettyJavaAccessFlagsStr: string = PrettyAccessFlags(ptr(this.handle.add(getArtMethodSpec().offset.accessFlags).readU32()))
+        return `${PrettyJavaAccessFlagsStr} ${this.prettyMethod()}`
+    }
+
     // bool ArtMethod::HasSameNameAndSignature(ArtMethod* other) 
     // _ZN3art9ArtMethod23HasSameNameAndSignatureEPS0_
-    HasSameNameAndSignature(other: ArtMethod): Boolean {
+    HasSameNameAndSignature(other: ArtMethod): boolean {
         return callSym<boolean>(
             "_ZN3art9ArtMethod23HasSameNameAndSignatureEPS0_", "libart.so",
             'bool', ['pointer', 'pointer'],
@@ -261,10 +279,10 @@ export class ArtMethod extends JSHandle implements IArtMethod, SizeOfClass {
     // const char* GetRuntimeMethodName()
     // _ZN3art9ArtMethod20GetRuntimeMethodNameEv
     GetRuntimeMethodName(): string {
-        return callSym<string>(
+        return callSym<NativePointer>(
             "_ZN3art9ArtMethod20GetRuntimeMethodNameEv", "libart.so",
             'pointer', ['pointer'],
-            this.handle)
+            this.handle).readCString()
     }
 
     // void ArtMethod::SetNotIntrinsic()
@@ -278,7 +296,7 @@ export class ArtMethod extends JSHandle implements IArtMethod, SizeOfClass {
 
     // void ArtMethod::CopyFrom(ArtMethod* src, PointerSize image_pointer_size)
     // _ZN3art9ArtMethod8CopyFromEPS0_NS_11PointerSizeE
-    CopyFrom(src: ArtMethod) {
+    CopyFrom(src: ArtMethod): void {
         return callSym<void>(
             "_ZN3art9ArtMethod8CopyFromEPS0_NS_11PointerSizeE", "libart.so",
             'void', ['pointer', 'pointer', 'int'],
@@ -296,7 +314,7 @@ export class ArtMethod extends JSHandle implements IArtMethod, SizeOfClass {
 
     // uint16_t FindObsoleteDexClassDefIndex()
     // _ZN3art9ArtMethod28FindObsoleteDexClassDefIndexEv
-    FindObsoleteDexClassDefIndex() {
+    FindObsoleteDexClassDefIndex(): number {
         return callSym<number>(
             "_ZN3art9ArtMethod28FindObsoleteDexClassDefIndexEv", "libart.so",
             'int', ['pointer'],
@@ -306,11 +324,11 @@ export class ArtMethod extends JSHandle implements IArtMethod, SizeOfClass {
     // ArtMethod* GetSingleImplementation(PointerSize pointer_size);
     // _ZN3art9ArtMethod23GetSingleImplementationENS_11PointerSizeE
     // check impl if this methid is IsAbstract
-    GetSingleImplementation() {
-        return callSym<NativePointer>(
+    GetSingleImplementation(): ArtMethod {
+        return new ArtMethod(callSym<NativePointer>(
             "_ZN3art9ArtMethod23GetSingleImplementationENS_11PointerSizeE", "libart.so",
             'pointer', ['pointer', 'int'],
-            this.handle, Process.pointerSize)
+            this.handle, Process.pointerSize))
     }
 
     // ArtMethod* FindOverriddenMethod(PointerSize pointer_size)
@@ -325,7 +343,7 @@ export class ArtMethod extends JSHandle implements IArtMethod, SizeOfClass {
     // Returns true if this method could be overridden by a default method.
     // bool IsOverridableByDefaultMethod() 
     // _ZN3art9ArtMethod28IsOverridableByDefaultMethodEv
-    IsOverridableByDefaultMethod() {
+    IsOverridableByDefaultMethod(): boolean {
         return callSym<boolean>(
             "_ZN3art9ArtMethod28IsOverridableByDefaultMethodEv", "libart.so",
             'bool', ['pointer'],
@@ -343,7 +361,7 @@ export class ArtMethod extends JSHandle implements IArtMethod, SizeOfClass {
 
     // std::string JniShortName()
     // _ZN3art9ArtMethod12JniShortNameEv
-    JniShortName() {
+    JniShortName(): string {
         return StdString.fromPointers(callSym<NativePointer[]>(
             "_ZN3art9ArtMethod12JniShortNameEv", "libart.so",
             ['pointer', 'pointer', 'pointer'], ['pointer'],
@@ -361,7 +379,7 @@ export class ArtMethod extends JSHandle implements IArtMethod, SizeOfClass {
 
     // const void* RegisterNative(const void* native_method)
     // _ZN3art9ArtMethod14RegisterNativeEPKv
-    RegisterNative(native_method: NativePointerValue) {
+    RegisterNative(native_method: NativePointerValue): NativePointer {
         return callSym<NativePointer>("_ZN3art9ArtMethod14RegisterNativeEPKv", "libart.so",
             'pointer', ['pointer', 'pointer'],
             this.handle, native_method)
@@ -381,7 +399,7 @@ export class ArtMethod extends JSHandle implements IArtMethod, SizeOfClass {
     // Number of 32bit registers that would be required to hold all the arguments
     // static size_t NumArgRegisters(const char* shorty);
     // _ZN3art9ArtMethod15NumArgRegistersEPKc
-    static NumArgRegisters(shorty: string) {
+    static NumArgRegisters(shorty: string): number {
         return callSym<number>(
             "_ZN3art9ArtMethod15NumArgRegistersEPKc", "libart.so",
             'int', ['pointer'],
@@ -401,7 +419,6 @@ export class ArtMethod extends JSHandle implements IArtMethod, SizeOfClass {
         LOGD(`GetRuntimeMethodName -> ${this.GetRuntimeMethodName()}`)
         LOGD(`dex_code_item_offset_ -> ${this.dex_code_item_offset} -> ${ptr(this.dex_code_item_offset)}`)
         LOGD(`dex_method_index -> ${ptr(this.dex_method_index)}`)
-        LOGD(`GetRuntimeMethodName -> ${this.GetRuntimeMethodName()}`)
         // LOGD(`HasSameNameAndSignature -> ${this.HasSameNameAndSignature(art_1)}`)
         LOGD(`access_flags_string -> ${this.access_flags_string}`)
         LOGD(`JniShortName -> ${this.JniShortName()}`)
@@ -415,7 +432,7 @@ export class ArtMethod extends JSHandle implements IArtMethod, SizeOfClass {
         LOGD(this.GetDexFile().oat_dex_file.oat_file)
     }
 
-    show = (num?: number) => {
+    showCode = (num?: number) => {
         const debugInfo: DebugSymbol = DebugSymbol.fromAddress(this.entry_point_from_quick_compiled_code)
         debugInfo.moduleName == "base.odex" ? this.showOatAsm(num) : this.showSmali(num)
     }
@@ -423,15 +440,36 @@ export class ArtMethod extends JSHandle implements IArtMethod, SizeOfClass {
     showSmali(num: number = -1, info: boolean = false, /** Forced withdrawal */ forceRet: number = 100): void {
         const accessor: CodeItemInstructionAccessor = this.DexInstructions()
         const dex_file: DexFile = this.GetDexFile()
+        const code_item: NativePointer = this.GetCodeItem()
         let insns: ArtInstruction = accessor.InstructionAt()
         if (!this.jniCode.isNull()) {
             LOGD(`👉 ${this}`)
             LOGE(`jniCode is not null -> ${this.jniCode}`)
             return
         }
-        LOGD(`↓dex_file↓\n${dex_file}\n`)
-        LOGD(`👉 ${this}\n${this.getInfo()}`)
-        if (info) LOGD(`↓accessor↓\n${accessor}\n`)
+        if (info) {
+            LOGD(`↓dex_file↓\n${dex_file}\n`)
+            LOGD(`👉 ${this}\n${this.getInfo()}`)
+            LOGD(`↓accessor↓\n${accessor}\n`)
+        }
+
+        newLine()
+        LOGD(this.methodName)
+        let disp_insns_info: string = `insns_size_in_code_units: ${accessor.insns_size_in_code_units} - ${ptr(accessor.insns_size_in_code_units)}`
+        disp_insns_info += ` | method start: ${accessor.insns} | insns start ${code_item}`
+        LOGD(`\n[ ${disp_insns_info} ]\n`)
+
+        const start_off: number = accessor.insns.sub(code_item).toUInt32()
+        const bf: ArrayBuffer = code_item.readByteArray(start_off)
+        const bf_str: string = Array.from(new Uint8Array(bf)).map((item: number) => item.toString(16).padStart(2, '0')).join(' ')
+        if (this.GetDexFile().is_compact_dex) {
+            const item: CompactDexFile_CodeItem = (CodeItemInstructionAccessor.CodeItem(dex_file, this.GetCodeItem()) as CompactDexFile_CodeItem)
+            LOGZ(`[ ${start_off} | ${bf_str} ] => [ fields : ${item.fields} <- ${ptr(item.fields)} | insns_count_and_flags: ${item.insns_count_and_flags} <- ${ptr(item.insns_count_and_flags)} ]\n`)
+        } else {
+            const item: StandardDexFile_CodeItem = (CodeItemInstructionAccessor.CodeItem(dex_file, this.GetCodeItem()) as StandardDexFile_CodeItem)
+            LOGZ(`[ ${start_off} | ${bf_str} ] \n[ registers_size: ${item.registers_size} | ins_size: ${item.ins_size} | outs_size: ${item.outs_size} | tries_size: ${item.tries_size} | debug_info_off: ${item.debug_info_off} | insns_size_in_code_units: ${item.insns_size_in_code_units} | insns: ${item.insns} ]\n`)
+        }
+
         let offset: number = 0
         let last_offset: number = 0
         let insns_num: number = 0
@@ -461,13 +499,14 @@ export class ArtMethod extends JSHandle implements IArtMethod, SizeOfClass {
         newLine()
     }
 
-    showOatAsm(num: number = 20) {
-        let insns: Instruction = Instruction.parse(this.entry_point_from_quick_compiled_code)
+    showOatAsm(num: number = 20, info: boolean = false) {
         newLine()
-        LOGD(`👉 ${this}\n${this.getInfo()}`)
-        LOGD(`↓insns↓\n`)
-        // 暂时无法去确定asm的结束位置
+        if (info) LOGD(`👉 ${this}\n${this.getInfo()}`)
+        LOGD(this.methodName)
+        newLine()
 
+        // 暂时无法去确定asm的结束位置
+        let insns: Instruction = Instruction.parse(this.entry_point_from_quick_compiled_code)
         let num_local: number = 0
         let code_offset: number = 0
         let errorFlag: boolean = false

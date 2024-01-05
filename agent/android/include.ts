@@ -1,6 +1,7 @@
 import './Object'
 import './JSHandle'
 import './android'
+import './ValueHandle'
 import './machine-code'
 import './TraceManager'
 
