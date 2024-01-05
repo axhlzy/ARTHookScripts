@@ -16,7 +16,7 @@ export class ArtInstruction extends JSHandle {
             arrary_ret.push(loopAddaddress.readPointer().readCString())
             loopAddaddress = loopAddaddress.add(Process.pointerSize)
         }
-        ArtInstruction.cached_kInstructionNames = arrary_ret
+        ArtInstruction.cached_kInstructionNames = new Array(...arrary_ret)
         return arrary_ret
     }
 
@@ -39,15 +39,16 @@ export class ArtInstruction extends JSHandle {
         return arrary_ret
     }
 
+    // https://cs.android.com/android/platform/superproject/+/master:art/libdexfile/dex/dex_instruction.h;l=689
     private static cached_kInstructionDescriptorsMap: Array<[String, InstructionDescriptor]> = []
     static get InstructionGroup(): Array<[String, InstructionDescriptor]> {
         if (ArtInstruction.cached_kInstructionDescriptorsMap.length > 0) return ArtInstruction.cached_kInstructionDescriptorsMap
-        let ret: Array<[String, InstructionDescriptor]> = []
+        let arrary_ret: Array<[String, InstructionDescriptor]> = []
         ArtInstruction.kInstructionDescriptors.forEach((descriptor, index) => {
-            ret.push([ArtInstruction.kInstructionNames[index], descriptor])
+            arrary_ret.push([ArtInstruction.kInstructionNames[index], descriptor])
         })
-        ArtInstruction.cached_kInstructionDescriptorsMap = new Array(...ret)
-        return ret
+        ArtInstruction.cached_kInstructionDescriptorsMap = new Array(...arrary_ret)
+        return arrary_ret
     }
 
     // _ZNK3art11Instruction10DumpStringEPKNS_7DexFileE
@@ -204,6 +205,8 @@ class Code extends JSHandle {
 //     uint8_t flags;                 // Set of Flags.
 //     int8_t size_in_code_units;
 //   };
+
+// https://cs.android.com/android/platform/superproject/+/master:art/libdexfile/dex/dex_instruction.h;l=208
 class InstructionDescriptor extends JSHandle {
 
     // uint32_t verify_flags; 
@@ -258,6 +261,7 @@ class InstructionDescriptor extends JSHandle {
 //     kExperimental        = 0x80,  // is an experimental opcode
 //   };
 
+// https://cs.android.com/android/platform/superproject/+/master:art/libdexfile/dex/dex_instruction.h;l=144
 class Flags extends JSHandle {
 
     enumMap: Map<number, string> = new Map([
@@ -302,6 +306,7 @@ class Flags extends JSHandle {
 //     kIndexProtoRef,           // prototype reference index
 //   };
 
+// https://cs.android.com/android/platform/superproject/+/master:art/libdexfile/dex/dex_instruction.h;l=129
 class IndexType extends JSHandle {
 
     enumMap: Map<number, string> = new Map([
@@ -371,6 +376,7 @@ class IndexType extends JSHandle {
 //     k51l,  // op vAA, #+BBBBBBBBBBBBBBBB
 //   };
 
+// https://cs.android.com/android/platform/superproject/+/master:art/libdexfile/dex/dex_instruction.h;l=92
 class Format extends JSHandle {
 
     enumMap: Map<number, string> = new Map([
@@ -424,4 +430,5 @@ declare global {
     var InstructionGroup: () => Array<[String, InstructionDescriptor]>
 }
 
+// https://cs.android.com/android/platform/superproject/+/master:art/libdexfile/dex/dex_instruction_list.h;l=21
 globalThis.InstructionGroup = () => { return ArtInstruction.InstructionGroup }
