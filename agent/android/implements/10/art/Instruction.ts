@@ -111,13 +111,9 @@ export class ArtInstruction extends JSHandle {
 
     get SizeInCodeUnits(): number {
         const opcode: number = this.Fetch16()
-        // LOGZ(`opcode: ${ptr(opcode)} ${opcode} | ${ArtInstruction.kInstructionDescriptors[opcode]} | ${ArtInstruction.kInstructionNames[opcode]}`)
-        // LOGZ(ArtInstruction.InstructionGroup[opcode][1].size_in_code_units)
+        if (DEBUG_LOG) LOGZ(`opcode: ${ptr(opcode)} ${opcode} | ${ArtInstruction.kInstructionDescriptors[opcode]} | ${ArtInstruction.kInstructionNames[opcode]}`)
         let result: number = (ArtInstruction.InstructionGroup[opcode][1].size_in_code_units)
-        if (result < 0) {
-            let ret = this.sizeInCodeUnitsComplexOpcode() * 0x2
-            return ret
-        }
+        if (result < 0) return this.sizeInCodeUnitsComplexOpcode() * 0x2
         else return result * 0x2
     }
 
@@ -180,7 +176,9 @@ class Code extends JSHandle {
         [0x2A, "GOTO_32"],
         [0x2B, "PACKED_SWITCH"],
         [0x2C, "SPARSE_SWITCH"],
+        // ...
         // todo
+        // ...
     ])
 
     private flags: number = this.CurrentHandle.toInt32()
