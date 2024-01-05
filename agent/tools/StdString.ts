@@ -40,8 +40,12 @@ export class StdString {
     }
 
     toString(): string {
-        const data: NativePointer = this._getData()[0] as NativePointer
-        return data.readCString()
+        try {
+            const data: NativePointer = this._getData()[0] as NativePointer
+            return data.readCString()
+        } catch (error) {
+            return 'ERROR'
+        }
     }
 
     private _getData(): [NativePointer, boolean] {

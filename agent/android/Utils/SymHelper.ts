@@ -9,8 +9,13 @@ declare global {
     function getSym(symName: string, md: string, check?: boolean): NativePointer | null
 }
 
-function callSymLocal<T>(address: NativePointer, retType: NativeType, argTypes: NativeType[], ...args: any[]): T {
-    return new NativeFunction(address, retType, argTypes)(...args) as T
+function CallSymLocal<T>(address: NativePointer, retType: NativeType, argTypes: NativeType[], ...args: any[]): T {
+    try {
+        return new NativeFunction(address, retType, argTypes)(...args) as T
+    } catch (error: any) {
+        LOGE(`CallSymLocal exception 👇 \n${error.stack}`)
+        return null
+    }
 }
 
 type ArgType = NativeType | JSHandle | NativePointer | number
@@ -27,7 +32,7 @@ function transformArgs(args: ArgType[], argTypes: NativeType[]): any[] {
 }
 
 export function callSym<T>(sym: string, md: string, retType: NativeType, argTypes: NativeType[], ...args: any[]): T {
-    return callSymLocal<T>(getSym(sym, md), retType, argTypes, ...transformArgs(args, argTypes))
+    return CallSymLocal<T>(getSym(sym, md), retType, argTypes, ...transformArgs(args, argTypes))
 }
 
 const Cache: Map<string, NativePointer> = new Map()
@@ -37,13 +42,13 @@ export function getSym(symName: string, md: string, check: boolean = false): Nat
         throw new Error(`Usage: getSym(symName: string, md: string, check: boolean = false)`)
 
     const module: Module = Process.getModuleByName(md)
-    if (module == null)
-        throw new Error(`module ${md} not found`)
+    if (module == null) throw new Error(`module ${md} not found`)
 
     let address: NativePointer | null = module.findExportByName(symName)
+    // Use demangle to handle function export names, 
+    // used to deal with the problem of exporting functions with the same name 
+    // but different arguments under arm32 and arm64
     if (address == null) {
-        if (DEBUG_LOG) LOGE(`debug -> symbol ${symName} not found in ${md}`)
-        if (DEBUG_LOG) LOGE(`debug -> try to demangle symbol ${demangleName_(symName)}`)
         let sym_ret: ModuleSymbolDetails = SymbolManager.SymbolFilter(null, demangleName_(symName))
         if (DEBUG_LOG) LOGD(`debug -> symbol ${symName} found in ${sym_ret} -> ${sym_ret.address}`)
         if (sym_ret.type != "function") throw new Error(`symbol ${sym_ret.name} not a function [ ${sym_ret.type} ]`)

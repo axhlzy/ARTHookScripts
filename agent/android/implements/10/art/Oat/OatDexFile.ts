@@ -48,6 +48,7 @@ export class OatDexFile extends JSHandle {
 
     toString(): string {
         let disp: string = `OatDexFile<${this.handle}>`
+        if (this.handle.isNull()) return disp
         disp += `\n\t oat_file = ${this.oat_file_}`
         disp += `\n\t dex_file_location = ${this.dex_file_location} @ ${this.dex_file_location_}`
         disp += `\n\t canonical_dex_file_location = ${this.canonical_dex_file_location} @ ${this.canonical_dex_file_location_}`
@@ -64,6 +65,7 @@ export class OatDexFile extends JSHandle {
     }
 
     get oat_file(): OatFile {
+        if (this.oat_file_.isNull()) return null
         return new OatFile(this.oat_file_.readPointer())
     }
 

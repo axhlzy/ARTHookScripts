@@ -334,10 +334,11 @@ export class ArtMethod extends JSHandle implements IArtMethod, SizeOfClass {
 
     // uint16_t ArtMethod::GetIndexFromQuickening(uint32_t dex_pc) 
     // _ZN3art9ArtMethod16GetQuickenedInfoEv
-    GetQuickenedInfo(dex_pc: number = 0) {
+    GetQuickenedInfo(dex_pc: number = 0): number {
         return callSym<number>("_ZN3art9ArtMethod16GetQuickenedInfoEv", "libart.so",
-            'int', ['pointer', 'int'],
-            this, dex_pc)
+            'int',
+            ['pointer', 'int'],
+            this.handle, dex_pc)
     }
 
     // std::string JniShortName()
@@ -419,7 +420,7 @@ export class ArtMethod extends JSHandle implements IArtMethod, SizeOfClass {
         debugInfo.moduleName == "base.odex" ? this.showOatAsm(num) : this.showSmali(num)
     }
 
-    showSmali(num: number = -1, info: boolean = false, /** Forced withdrawal */ forceRet: number = 200): void {
+    showSmali(num: number = -1, info: boolean = false, /** Forced withdrawal */ forceRet: number = 100): void {
         const accessor: CodeItemInstructionAccessor = this.DexInstructions()
         const dex_file: DexFile = this.GetDexFile()
         let insns: ArtInstruction = accessor.InstructionAt()
@@ -432,6 +433,7 @@ export class ArtMethod extends JSHandle implements IArtMethod, SizeOfClass {
         LOGD(`👉 ${this}\n${this.getInfo()}`)
         if (info) LOGD(`↓accessor↓\n${accessor}\n`)
         let offset: number = 0
+        let last_offset: number = 0
         let insns_num: number = 0
         let count_num: number = num
         const count_insns: number = accessor.insns_size_in_code_units * 2
@@ -446,10 +448,15 @@ export class ArtMethod extends JSHandle implements IArtMethod, SizeOfClass {
                 LOGW(`\nforce return counter -> ${forceRet}\nThere may be a loop error, check the code ...`)
                 break
             }
+            else if (last_offset == offset) {
+                LOGW(`\ninsns current offset -> [ ${offset} == ${last_offset} ] <- insns last offset\nThere may be a loop error, check the code ...`)
+                break
+            }
             else {
                 if (offset >= count_insns) break
             }
             insns = insns.Next()
+            last_offset = offset
         }
         newLine()
     }

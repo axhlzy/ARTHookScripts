@@ -258,6 +258,7 @@ export class DexFile extends JSHandle {
     }
 
     get oat_dex_file(): OatDexFile {
+        if (this.oat_dex_file_.isNull()) return null
         return new OatDexFile(this.oat_dex_file_.readPointer())
     }
 

@@ -29,11 +29,11 @@ export class ArtInstruction extends JSHandle {
         const arrary_ret: InstructionDescriptor[] = []
         let loopAddaddress: NativePointer = kInstructionDescriptors_ptr
         let counter = 0xFF // 256
-        // let index = 0
+        let index = 0
         while (counter-- > 0) {
             arrary_ret.push(new InstructionDescriptor(loopAddaddress))
-            // LOGZ(`${++index} ${new InstructionDescriptor(loopAddaddress)}`)
-            loopAddaddress = loopAddaddress.add(Process.pointerSize)
+            LOGZ(`${++index} ${new InstructionDescriptor(loopAddaddress)}`)
+            loopAddaddress = loopAddaddress.add(InstructionDescriptor.SizeOfClass)
         }
         ArtInstruction.cached_kInstructionDescriptors = new Array(...arrary_ret)
         return arrary_ret
@@ -207,7 +207,7 @@ class Code extends JSHandle {
 class InstructionDescriptor extends JSHandle {
 
     // uint32_t verify_flags; 
-    verify_flags_ = this.CurrentHandle
+    verify_flags_ = this.handle
     // Format format; => uint8_t
     format_ = this.verify_flags_.add(0x4)
     // IndexType index_type; => uint8_t
@@ -218,7 +218,11 @@ class InstructionDescriptor extends JSHandle {
     size_in_code_units_ = this.flags_.add(0x1)
 
     toString(): string {
-        return `InstructionDescriptor<${this.handle}> | format: ${this.format.name} | size_in_code_units: ${this.size_in_code_units}`
+        return `InstructionDescriptor<${this.handle}> | format: ${this.format.name} @ ${this.format.handle} | size_in_code_units: ${this.size_in_code_units} @ `
+    }
+
+    static get SizeOfClass(): NativePointer {
+        return ptr(0x4).add(0x1).add(0x1).add(0x1).add(0x1)
     }
 
     get verify_flags(): number {
@@ -398,7 +402,7 @@ class Format extends JSHandle {
         [25, "k51l"],
     ])
 
-    private format: number = this.CurrentHandle.toInt32()
+    private format: number = this.CurrentHandle.toUInt32()
 
     get name(): string {
         return this.enumMap.get(this.format) || "unknown"
