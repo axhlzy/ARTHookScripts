@@ -1,6 +1,8 @@
 import { demangleName_onlyFunctionName as demangleName_ } from "../../tools/functions"
-import { JSHandle } from "../JSHandle"
 import { SymbolManager } from "../start/SymbolManager"
+import { JSHandle } from "../JSHandle"
+
+const DEBUG_LOG: boolean = false
 
 declare global {
     function callSym<T>(sym: string, md: string, retType: NativeType, argTypes: NativeType[], ...args: any[]): T
@@ -25,24 +27,29 @@ function transformArgs(args: ArgType[], argTypes: NativeType[]): any[] {
 }
 
 export function callSym<T>(sym: string, md: string, retType: NativeType, argTypes: NativeType[], ...args: any[]): T {
-    let address: NativePointer | null = getSym(sym, md)
+    return callSymLocal<T>(getSym(sym, md), retType, argTypes, ...transformArgs(args, argTypes))
+}
+
+const Cache: Map<string, NativePointer> = new Map()
+export function getSym(symName: string, md: string, check: boolean = false): NativePointer | null {
+    if (Cache.has(symName)) return Cache.get(symName)!
+    if (symName == undefined || md == null || symName == "" || md == "")
+        throw new Error(`Usage: getSym(symName: string, md: string, check: boolean = false)`)
+
+    const module: Module = Process.getModuleByName(md)
+    if (module == null)
+        throw new Error(`module ${md} not found`)
+
+    let address: NativePointer | null = module.findExportByName(symName)
     if (address == null) {
-        let sym_ret: ModuleSymbolDetails = SymbolManager.SymbolFilter(null, demangleName_(sym))
+        if (DEBUG_LOG) LOGE(`debug -> symbol ${symName} not found in ${md}`)
+        if (DEBUG_LOG) LOGE(`debug -> try to demangle symbol ${demangleName_(symName)}`)
+        let sym_ret: ModuleSymbolDetails = SymbolManager.SymbolFilter(null, demangleName_(symName))
+        if (DEBUG_LOG) LOGD(`debug -> symbol ${symName} found in ${sym_ret} -> ${sym_ret.address}`)
         if (sym_ret.type != "function") throw new Error(`symbol ${sym_ret.name} not a function [ ${sym_ret.type} ]`)
         address = sym_ret.address
     }
-    return callSymLocal<T>(address, retType, argTypes, ...transformArgs(args, argTypes))
-}
-
-export function getSym(symName: string, md: string, check: boolean = false): NativePointer | null {
-    if (symName == undefined || md == null || symName == "" || md == "") {
-        throw new Error(`Usage: getSym(symName: string, md: string, check: boolean = false)`)
-    }
-    const module: Module = Process.getModuleByName(md)
-    if (module == null) {
-        throw new Error(`module ${md} not found`)
-    }
-    const address: NativePointer | null = module.findExportByName(symName)
+    if (DEBUG_LOG) LOGD(`debug -> symbol ${symName} found in ${md} -> ${address}`)
     if (address == null) {
         throw new Error(`symbol ${symName} not found`)
     }
@@ -56,6 +63,7 @@ export function getSym(symName: string, md: string, check: boolean = false): Nat
             // LOGD(`symbol ${symName} found \n ${JSON.stringify(syms[0])}`)
         }
     }
+    Cache.set(symName, address)
     return address
 }
 

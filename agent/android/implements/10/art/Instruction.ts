@@ -20,11 +20,6 @@ export class ArtInstruction extends JSHandle {
         return arrary_ret
     }
 
-    // test
-    // ArtInstruction.kInstructionDescriptors.forEach((descriptor, index) => {
-    //     LOGD(`${index} -> ${descriptor}`)
-    // })
-
     // _ZN3art11Instruction23kInstructionDescriptorsE
     // static const InstructionDescriptor kInstructionDescriptors[];
     private static cached_kInstructionDescriptors: InstructionDescriptor[] = []
@@ -34,12 +29,25 @@ export class ArtInstruction extends JSHandle {
         const arrary_ret: InstructionDescriptor[] = []
         let loopAddaddress: NativePointer = kInstructionDescriptors_ptr
         let counter = 0xFF // 256
+        // let index = 0
         while (counter-- > 0) {
             arrary_ret.push(new InstructionDescriptor(loopAddaddress))
+            // LOGZ(`${++index} ${new InstructionDescriptor(loopAddaddress)}`)
             loopAddaddress = loopAddaddress.add(Process.pointerSize)
         }
-        ArtInstruction.cached_kInstructionDescriptors = arrary_ret
+        ArtInstruction.cached_kInstructionDescriptors = new Array(...arrary_ret)
         return arrary_ret
+    }
+
+    private static cached_kInstructionDescriptorsMap: Array<[String, InstructionDescriptor]> = []
+    static get InstructionGroup(): Array<[String, InstructionDescriptor]> {
+        if (ArtInstruction.cached_kInstructionDescriptorsMap.length > 0) return ArtInstruction.cached_kInstructionDescriptorsMap
+        let ret: Array<[String, InstructionDescriptor]> = []
+        ArtInstruction.kInstructionDescriptors.forEach((descriptor, index) => {
+            ret.push([ArtInstruction.kInstructionNames[index], descriptor])
+        })
+        ArtInstruction.cached_kInstructionDescriptorsMap = new Array(...ret)
+        return ret
     }
 
     // _ZNK3art11Instruction10DumpStringEPKNS_7DexFileE
@@ -66,12 +74,11 @@ export class ArtInstruction extends JSHandle {
     // std::string DumpHexLE(size_t instr_code_units) const;
     dumpHexLE(instr_code_units: number = 3): String {
         const realInsLen: number = this.SizeInCodeUnits / 2
-        const result: NativePointer[] = callSym<NativePointer[]>(
+        return `${realInsLen} - ${StdString.fromPointers(callSym<NativePointer[]>(
             "_ZNK3art11Instruction9DumpHexLEEm", "libdexfile.so"
             , ["pointer", "pointer", "pointer"]
             , ["pointer", "int"]
-            , this.handle, realInsLen > instr_code_units ? realInsLen : instr_code_units)
-        return `${realInsLen} - ${StdString.fromPointers(result)}`
+            , this.handle, realInsLen > instr_code_units ? realInsLen : instr_code_units))}`
     }
 
     // _ZNK3art11Instruction28SizeInCodeUnitsComplexOpcodeEv
@@ -79,7 +86,7 @@ export class ArtInstruction extends JSHandle {
     sizeInCodeUnitsComplexOpcode(): number {
         return callSym<number>(
             "_ZNK3art11Instruction28SizeInCodeUnitsComplexOpcodeEv", "libdexfile.so"
-            , ["pointer", "pointer"]
+            , ["pointer"]
             , ["pointer"]
             , this.handle)
     }
@@ -101,6 +108,8 @@ export class ArtInstruction extends JSHandle {
 
     get SizeInCodeUnits(): number {
         const opcode: number = this.Fetch16()
+        // LOGZ(`opcode: ${ptr(opcode)} ${opcode} | ${ArtInstruction.kInstructionDescriptors[opcode]} | ${ArtInstruction.kInstructionNames[opcode]}`)
+        // LOGZ(ArtInstruction.InstructionGroup[opcode][1].size_in_code_units)
         let result: number = (ArtInstruction.kInstructionDescriptors[opcode].size_in_code_units)
         if (result < 0) {
             let ret = this.sizeInCodeUnitsComplexOpcode() * 0x2
@@ -209,7 +218,7 @@ class InstructionDescriptor extends JSHandle {
     size_in_code_units_ = this.flags_.add(0x1)
 
     toString(): string {
-        return `InstructionDescriptor<${this.handle}> | format: ${this.format.name} | size_in_code_units_: ${this.size_in_code_units}`
+        return `InstructionDescriptor<${this.handle}> | format: ${this.format.name} | size_in_code_units: ${this.size_in_code_units}`
     }
 
     get verify_flags(): number {
@@ -404,3 +413,11 @@ class Format extends JSHandle {
     }
 
 }
+
+export { }
+
+declare global {
+    var InstructionGroup: () => Array<[String, InstructionDescriptor]>
+}
+
+globalThis.InstructionGroup = () => { return ArtInstruction.InstructionGroup }

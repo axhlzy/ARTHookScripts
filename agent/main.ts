@@ -1,3 +1,4 @@
+import { ArtInstruction } from "./android/implements/10/art/Instruction"
 import "./include"
 
 globalThis.testArtMethod = () => {

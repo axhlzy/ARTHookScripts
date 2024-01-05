@@ -60,10 +60,7 @@ export class SymbolManager {
                 return item.name.indexOf(filterStr) == -1
             })
         })
-        if (ret.length == 0) {
-            if (withError) throw new Error("can not find symbol")
-            else LOGE("can not find symbol")
-        }
+        if (ret.length == 0) if (withError) throw new Error("can not find symbol")
         if (ret.length > 1) {
             LOGW(`find too many symbol, just ret first | size : ${ret.length}`)
             if (ret.length < 5) {

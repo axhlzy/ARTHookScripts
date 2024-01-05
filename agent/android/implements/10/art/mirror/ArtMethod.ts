@@ -419,7 +419,7 @@ export class ArtMethod extends JSHandle implements IArtMethod, SizeOfClass {
         debugInfo.moduleName == "base.odex" ? this.showOatAsm(num) : this.showSmali(num)
     }
 
-    showSmali(num: number = -1, info: boolean = false): void {
+    showSmali(num: number = -1, info: boolean = false, /** Forced withdrawal */ forceRet: number = 200): void {
         const accessor: CodeItemInstructionAccessor = this.DexInstructions()
         const dex_file: DexFile = this.GetDexFile()
         let insns: ArtInstruction = accessor.InstructionAt()
@@ -441,7 +441,12 @@ export class ArtMethod extends JSHandle implements IArtMethod, SizeOfClass {
             offset += insns.SizeInCodeUnits
             if (count_num != -1) {
                 if (--count_num <= 0 || ptr(offset).isNull()) break
-            } else {
+            }
+            else if (forceRet-- <= 0) {
+                LOGW(`\nforce return counter -> ${forceRet}\nThere may be a loop error, check the code ...`)
+                break
+            }
+            else {
                 if (offset >= count_insns) break
             }
             insns = insns.Next()
