@@ -1,10 +1,10 @@
+import { DexClassDef, DexTryItem } from "./DexFileStructs"
 import { StdString } from "../../../../../tools/StdString"
 import { JSHandle } from "../../../../JSHandle"
 import { OatDexFile } from "../Oat/OatDexFile"
+import { DexTypeIndex } from "./DexIndex"
 import { PointerSize } from "../Globals"
 import { DexHeader } from "./Header"
-import { DexTypeIndex } from "./DexIndex"
-import { DexClassDef, DexTryItem } from "./DexFileStructs"
 
 // virtual class DexFile;
 export class DexFile extends JSHandle {

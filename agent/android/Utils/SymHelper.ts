@@ -36,7 +36,7 @@ export function callSym<T>(sym: string, md: string, retType: NativeType, argType
 }
 
 const Cache: Map<string, NativePointer> = new Map()
-export function getSym(symName: string, md: string, check: boolean = false): NativePointer | null {
+export function getSym(symName: string, md: string, checkNotFunction: boolean = false): NativePointer | null {
     if (Cache.has(symName)) return Cache.get(symName)!
     if (symName == undefined || md == null || symName == "" || md == "")
         throw new Error(`Usage: getSym(symName: string, md: string, check: boolean = false)`)
@@ -45,6 +45,22 @@ export function getSym(symName: string, md: string, check: boolean = false): Nat
     if (module == null) throw new Error(`module ${md} not found`)
 
     let address: NativePointer | null = module.findExportByName(symName)
+
+    // add action to find in symbols
+    if (address == null) {
+        let res: ModuleSymbolDetails[] = module.enumerateSymbols().filter((sym: ModuleSymbolDetails) => {
+            return sym.name == symName && (checkNotFunction ? sym.type == "function" : true)
+        })
+        if (res.length > 1) {
+            address = res[0].address
+            LOGW(`find too many symbol, just ret first | size : ${res.length}`)
+            return address
+        } else if (res.length == 1) {
+            address = res[0].address
+            return address
+        }
+    }
+
     // Use demangle to handle function export names, 
     // used to deal with the problem of exporting functions with the same name 
     // but different arguments under arm32 and arm64
@@ -58,7 +74,7 @@ export function getSym(symName: string, md: string, check: boolean = false): Nat
     if (address == null) {
         throw new Error(`symbol ${symName} not found`)
     }
-    if (check) {
+    if (checkNotFunction) {
         const syms: ModuleSymbolDetails[] = module.enumerateSymbols().filter((sym: ModuleSymbolDetails) => {
             return sym.name == symName && sym.type == "object"
         })

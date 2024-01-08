@@ -1,3 +1,4 @@
+import { TraceManager } from "./android/TraceManager"
 import "./include"
 
 globalThis.testArtMethod = () => {
@@ -16,6 +17,7 @@ setImmediate(() => {
 
     // TraceManager.Trace_DefineClass()
     // TraceManager.Trace_OpenCommon()
+    // TraceManager.Trace_CallConstructors()
 
 })
 

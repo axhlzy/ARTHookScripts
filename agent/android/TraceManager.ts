@@ -1,5 +1,6 @@
 import { DefineClassHookManager } from "./start/DefineClass"
 import { OpenCommonHookManager } from "./start/OpenCommon"
+import { InitArray } from "./start/init_array"
 
 export class TraceManager {
 
@@ -39,6 +40,10 @@ export class TraceManager {
 
     public static Trace_DefineClass() {
         setImmediate(() => { DefineClassHookManager.getInstance().enableHook() })
+    }
+
+    public static Trace_CallConstructors() {
+        setImmediate(() => { InitArray.Hook_CallConstructors() })
     }
 
 }
