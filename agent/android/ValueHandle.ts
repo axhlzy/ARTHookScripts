@@ -2,7 +2,7 @@ import { PointerSize } from "./implements/10/art/Globals"
 
 export class ValueHandle implements SizeOfClass {
 
-    private value_: NativePointerValue = NULL
+    protected value_: NativePointerValue = NULL
 
     constructor(handle: NativePointerValue) {
         this.value_ = handle

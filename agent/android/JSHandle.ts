@@ -1,10 +1,22 @@
-export class JSHandle implements SizeOfClass {
+export class JSHandleNotImpl {
 
     public handle: NativePointer
 
     constructor(handle: NativePointer | number) {
         this.handle = (typeof handle === "number") ? ptr(handle) : handle
     }
+
+    toString(): string {
+        return `JSHandle< ${this.handle} >`
+    }
+
+    show(): void {
+        LOGD(this.toString())
+    }
+
+}
+
+export class JSHandle extends JSHandleNotImpl implements SizeOfClass {
 
     get CurrentHandle(): NativePointer {
         return this.handle
@@ -36,10 +48,6 @@ export class JSHandle implements SizeOfClass {
 
     public VirtualTablePrint(): void {
         this.VirtualTableList.map((item, index) => `[${index}] ${item}`).forEach(LOGD)
-    }
-
-    show(): void {
-        LOGD(this.toString())
     }
 
     toString(): string {

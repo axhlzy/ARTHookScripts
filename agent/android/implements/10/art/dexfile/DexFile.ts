@@ -1,8 +1,13 @@
-import { DexClassDef, DexTryItem } from "./DexFileStructs"
+import {
+    DexAnnotationSetItem,
+    DexAnnotationsDirectoryItem,
+    DexCallSiteIdItem, DexClassDef, DexFieldAnnotationsItem, DexFieldId, DexMethodHandleItem, DexMethodId,
+    DexProtoId, DexStringId, DexTryItem, DexTypeId, DexTypeList, LEB128String
+} from "./DexFileStructs"
 import { StdString } from "../../../../../tools/StdString"
+import { DexStringIndex, DexTypeIndex } from "./DexIndex"
 import { JSHandle } from "../../../../JSHandle"
 import { OatDexFile } from "../Oat/OatDexFile"
-import { DexTypeIndex } from "./DexIndex"
 import { PointerSize } from "../Globals"
 import { DexHeader } from "./Header"
 
@@ -118,7 +123,8 @@ export class DexFile extends JSHandle {
         disp += `\n\t location: ${this.location} @ ${this.location_}`
         disp += `\n\t location_checksum: ${this.location_checksum} ( ${ptr(this.location_checksum)} ) is_compact_dex: ${this.is_compact_dex}`
         disp += `\n\t begin: ${this.begin} size: ${this.size} ( ${ptr(this.size)} ) | data_begin: ${this.data_begin} data_size: ${this.data_size} ( ${ptr(this.data_size)} )`
-        disp += `\n\t oat_dex_file_ ${this.oat_dex_file_} | header_: ${this.header}`
+        disp += `\n\t oat_dex_file_ ${this.oat_dex_file_}`
+        // disp += `\n\t oat_dex_file_ ${this.oat_dex_file_} | header_: ${this.header}`
         disp += `\n\t string_ids: ${this.string_ids}`
         disp += `\n\t type_ids: ${this.type_ids}`
         disp += `\n\t field_ids: ${this.field_ids}`
@@ -128,6 +134,7 @@ export class DexFile extends JSHandle {
         disp += `\n\t method_handles: ${this.method_handles} num_method_handles: ${this.num_method_handles}`
         disp += `\n\t call_site_ids: ${this.call_site_ids} num_call_site_ids: ${this.num_call_site_ids}`
         disp += `\n\t hiddenapi_class_data: ${this.hiddenapi_class_data}`
+        disp += `\n\n${this.header}`
         return disp
     }
 
@@ -167,24 +174,147 @@ export class DexFile extends JSHandle {
         return this.string_ids_.readPointer()
     }
 
+    StringDataByIdx(index: DexStringIndex | number): LEB128String {
+        const index_: number = index instanceof DexStringIndex ? index.index : index
+        if (index_ < 0 || index_ > this.header.string_ids_size) throw new Error("index out of range")
+        const string_id = this.string_ids.add(index_ * 0x4).readU32()
+        const string_data = this.data_begin.add(string_id)
+        return LEB128String.from(string_data)
+    }
+
+    NumStringIds(): number {
+        return this.header.string_ids_size
+    }
+
+    FindStringId(string: string): number {
+        for (let i = 0; i < this.NumStringIds(); i++) {
+            const string_id = this.StringDataByIdx(i)
+            if (string_id.str == string) return i
+        }
+        return -1
+    }
+
     get type_ids(): NativePointer {
         return this.type_ids_.readPointer()
+    }
+
+    // const dex::TypeId& GetTypeId(dex::TypeIndex idx) const
+    GetTypeId(idx: DexTypeIndex | number): DexTypeId {
+        const idx_: number = idx instanceof DexTypeIndex ? idx.index : idx
+        if (idx_ < 0 || idx_ > this.header.type_ids_size) throw new Error("index out of range")
+        return new DexTypeId(this.type_ids.add(idx_ * DexTypeId.SizeOfClass))
+    }
+
+    GetTypeDescriptor(type_idx: DexTypeIndex | number): string {
+        const type_idx_: number = type_idx instanceof DexTypeIndex ? type_idx.index : type_idx
+        if (type_idx_ < 0 || type_idx_ > this.header.type_ids_size) throw new Error("index out of range")
+        const type_id = this.type_ids.add(type_idx_ * 0x4).readU32()
+        const type_descriptor = this.StringDataByIdx(type_id)
+        return type_descriptor.str
     }
 
     get field_ids(): NativePointer {
         return this.field_ids_.readPointer()
     }
 
-    get method_ids(): NativePointer {
-        return this.method_ids_.readPointer()
+    // size_t NumFieldIds() const 
+    NumFieldIds(): number {
+        return this.header.field_ids_size
+    }
+
+    // const dex::FieldId& GetFieldId(uint32_t idx) const
+    GetFieldId(idx: number): DexFieldId {
+        if (idx < 0 || idx > this.header.field_ids_size) throw new Error("index out of range")
+        return new DexFieldId(this.field_ids.add(idx * DexFieldId.SizeOfClass))
+    }
+
+    // const dex::FieldAnnotationsItem* GetFieldAnnotations(const dex::AnnotationsDirectoryItem* anno_dir) const 
+    GetFieldAnnotations(anno_dir: DexAnnotationsDirectoryItem): DexFieldAnnotationsItem {
+        return new DexFieldAnnotationsItem(this.data_begin.add(anno_dir.fields_size == 0 ? NULL : anno_dir.class_annotations_off_.add(PointerSize)))
     }
 
     get proto_ids(): NativePointer {
         return this.proto_ids_.readPointer()
     }
 
+    // size_t NumProtoIds() const 
+    NumProtoIds(): number {
+        return this.header.proto_ids_size
+    }
+
+    // const dex::ProtoId& GetProtoId(dex::ProtoIndex idx) const
+    GetProtoId(idx: DexTypeIndex | number): DexProtoId {
+        const idx_: number = idx instanceof DexTypeIndex ? idx.index : idx
+        if (idx_ < 0 || idx_ > this.header.proto_ids_size) throw new Error("index out of range")
+        return new DexProtoId(this.proto_ids.add(idx_ * DexProtoId.SizeOfClass))
+    }
+
+    // const char* GetShorty(dex::ProtoIndex proto_idx) const;
+    GetShorty(proto_idx: DexTypeIndex | number): string {
+        return this.StringDataByIdx(this.GetProtoId(proto_idx).shorty_idx).str
+    }
+
+    // const char* GetReturnTypeDescriptor(const dex::ProtoId& proto_id) const;
+    GetReturnTypeDescriptor(proto_id: DexProtoId): string {
+        return this.StringDataByIdx(proto_id.return_type_idx).str
+    }
+
+    // const dex::TypeList* GetProtoParameters(const dex::ProtoId& proto_id) const
+    GetProtoParameters(proto_id: DexProtoId): DexTypeList {
+        return new DexTypeList(this.data_begin.add(proto_id.parameters_off))
+    }
+
+    get method_ids(): NativePointer {
+        return this.method_ids_.readPointer()
+    }
+
+    // const dex::MethodId& GetMethodId(uint32_t idx) const 
+    GetMethodId(idx: number): DexMethodId {
+        if (idx < 0 || idx > this.header.method_ids_size) throw new Error("index out of range")
+        return new DexMethodId(this.method_ids.add(idx * DexMethodId.SizeOfClass))
+    }
+
     get class_defs(): NativePointer {
         return this.class_defs_.readPointer()
+    }
+
+    // const dex::ClassDef& GetClassDef(uint16_t idx) const 
+    GetClassDef(idx: number): DexClassDef {
+        if (idx < 0 || idx > this.header.class_defs_size) throw new Error("index out of range")
+        return new DexClassDef(this.class_defs.add(idx * DexClassDef.SizeOfClass))
+    }
+
+    // const char* GetClassDescriptor(const dex::ClassDef& class_def) const
+    GetClassDescriptor(class_def: DexClassDef | number): string {
+        const class_idx = class_def instanceof DexClassDef ? class_def.class_idx.index : class_def
+        const type_id = this.type_ids.add(class_idx * 0x4).readU32()
+        const type_descriptor = this.StringDataByIdx(type_id)
+        return type_descriptor.str
+    }
+
+    // const dex::ClassDef* FindClassDef(dex::TypeIndex type_idx) const
+    FindClassDef(type_idx: DexTypeIndex): DexClassDef {
+        return new DexClassDef(this.data_begin.add(this.header.class_defs_off).add(type_idx.index * DexClassDef.SizeOfClass))
+    }
+
+    // const dex::AnnotationsDirectoryItem* GetAnnotationsDirectory(const dex::ClassDef& class_def)
+    GetAnnotationsDirectory(class_def: DexClassDef): DexAnnotationsDirectoryItem {
+        return new DexAnnotationsDirectoryItem(this.data_begin.add(class_def.annotations_off))
+    }
+
+    // const dex::AnnotationSetItem* GetClassAnnotationSet(const dex::AnnotationsDirectoryItem* anno_dir)
+    GetClassAnnotationSet(anno_dir: DexAnnotationsDirectoryItem): DexAnnotationSetItem {
+        return new DexAnnotationSetItem(this.data_begin.add(anno_dir.class_annotations_off))
+    }
+
+    // uint32_t NumClassDefs() const
+    NumClassDefs(): number {
+        return this.header.class_defs_size
+    }
+
+    // const dex::TypeList* GetInterfacesList(const dex::ClassDef& class_def) const 
+    GetInterfacesList(class_def: DexClassDef): DexTypeList {
+        return new DexTypeList(this.data_begin.add(class_def.interfaces_off))
     }
 
     get method_handles(): NativePointer {
@@ -195,12 +325,34 @@ export class DexFile extends JSHandle {
         return this.num_method_handles_.readU32()
     }
 
+    // uint32_t NumMethodHandles() const
+    NumMethodHandles(): number {
+        return this.num_method_handles
+    }
+
+    // const dex::MethodHandleItem& GetMethodHandle(uint32_t idx) const 
+    GetMethodHandle(idx: number): DexMethodHandleItem {
+        if (idx < 0 || idx > this.num_method_handles) throw new Error("index out of range")
+        return new DexMethodHandleItem(this.method_handles.add(idx * DexMethodHandleItem.SizeOfClass))
+    }
+
     get call_site_ids(): NativePointer {
         return this.call_site_ids_.readPointer()
     }
 
     get num_call_site_ids(): number {
         return this.num_call_site_ids_.readU32()
+    }
+
+    // uint32_t NumCallSiteIds() const
+    NumCallSiteIds(): number {
+        return this.num_call_site_ids
+    }
+
+    // const dex::CallSiteIdItem& GetCallSiteId(uint32_t idx) const 
+    GetCallSiteId(idx: number): DexCallSiteIdItem {
+        if (idx < 0 || idx > this.num_call_site_ids) throw new Error("index out of range")
+        return new DexCallSiteIdItem(this.call_site_ids.add(idx * DexCallSiteIdItem.SizeOfClass))
     }
 
     get hiddenapi_class_data(): NativePointer {
@@ -316,16 +468,16 @@ export class DexFile extends JSHandle {
 
     // const StringId* DexFile::FindStringId(const char* string) const 
     // _ZNK3art7DexFile12FindStringIdEPKc
-    FindStringId(string: string): NativePointer {
-        return callSym<NativePointer>(
+    FindStringId_(string: string): DexStringId {
+        return new DexStringId(callSym<NativePointer>(
             "_ZNK3art7DexFile12FindStringIdEPKc", "libdexfile.so",
             "pointer", ["pointer", "pointer"],
-            this.handle, Memory.allocUtf8String(string))
+            this.handle, Memory.allocUtf8String(string)))
     }
 
     // const ClassDef* DexFile::FindClassDef(dex::TypeIndex type_idx) const
     // _ZNK3art7DexFile12FindClassDefENS_3dex9TypeIndexE
-    FindClassDef(type_idx: DexTypeIndex): NativePointer {
+    FindClassDef_(type_idx: DexTypeIndex): NativePointer {
         return callSym<NativePointer>(
             "_ZNK3art7DexFile12FindClassDefENS_3dex9TypeIndexE", "libdexfile.so",
             "pointer", ["pointer", "pointer"],

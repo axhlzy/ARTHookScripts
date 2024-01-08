@@ -20,13 +20,13 @@ export class ArtMethod extends JSHandle implements IArtMethod, SizeOfClass {
     // GcRoot<mirror::Class> declaring_class_; 
     declaring_class_: NativePointer = this.CurrentHandle // 0x4
     // std::atomic<std::uint32_t> access_flags_;
-    access_flags_: NativePointer = this.CurrentHandle.add(GcRoot.Size)   // 0x4
+    access_flags_: NativePointer = this.declaring_class_.add(GcRoot.Size)   // 0x4
     // uint32_t dex_code_item_offset_;
-    dex_code_item_offset_: NativePointer = this.CurrentHandle.add(GcRoot.Size + 0x4) // 0x4
+    dex_code_item_offset_: NativePointer = this.access_flags_.add(0x4) // 0x4
     // uint32_t dex_method_index_;
-    dex_method_index_: NativePointer = this.CurrentHandle.add(GcRoot.Size + 0x4 * 2) // 0x4
+    dex_method_index_: NativePointer = this.dex_code_item_offset_.add(0x4) // 0x4
     // uint16_t method_index_;
-    method_index_: NativePointer = this.CurrentHandle.add(GcRoot.Size + 0x4 * 3) // 0x2
+    method_index_: NativePointer = this.dex_method_index_.add(0x4) // 0x2
 
     //   union {
     //     // Non-abstract methods: The hotness we measure for this method. Not atomic,
@@ -97,7 +97,7 @@ export class ArtMethod extends JSHandle implements IArtMethod, SizeOfClass {
 
     // uint16_t method_index_;
     get dex_method_index(): number {
-        return this.dex_method_index_.readU32()
+        return this.dex_method_index_.readU16()
     }
 
     // uint16_t method_index_;
@@ -162,27 +162,16 @@ export class ArtMethod extends JSHandle implements IArtMethod, SizeOfClass {
         let disp: string = `ArtMethod< ${this.handle} >`
         disp += `\n\t ${this.methodName}`
         if (this.handle.isNull()) return disp
-        disp += `\n\t declaring_class: ${this.declaring_class} => ArtClass< ${this.declaring_class.root.handle} >`
-        disp += `\n\t access_flags: ${this.access_flags} => ${this.access_flags_string}`
-        disp += `\n\t dex_code_item_offset: ${this.dex_code_item_offset} | ${ptr(this.dex_code_item_offset)} => ${this.GetCodeItem()}`
-        disp += `\n\t dex_method_index: ${this.dex_method_index} | ${ptr(this.dex_method_index)}`
-        disp += `\n\t method_index: ${this.method_index} | ${ptr(this.method_index)}`
-        disp += `\n\t hotness_count: ${this.hotness_count} | ${ptr(this.hotness_count)}`
-        disp += `\n\t imt_index: ${this.imt_index} | ${ptr(this.imt_index)}`
-        disp += `\n\t data: ${this.data} | ${this.ptr_sized_fields_.data_}`
-        disp += `\n\t jniCode: ${this.jniCode} | ${this.ptr_sized_fields_.entry_point_from_quick_compiled_code_}`
+        disp += `\n\t declaring_class: ${this.declaring_class} -> ArtClass< ${this.declaring_class.root.handle} >`
+        disp += `\n\t access_flags: ${this.access_flags} -> ${this.access_flags_string}`
+        disp += `\n\t dex_code_item_offset: ${this.dex_code_item_offset} | ${ptr(this.dex_code_item_offset)} -> ${this.GetCodeItem()}`
+        disp += `\n\t dex_method_index: ${this.dex_method_index_} | ${ptr(this.dex_method_index)}`
+        disp += `\n\t method_index: ${this.method_index_} | ${ptr(this.method_index)}`
+        disp += `\n\t hotness_count: ${this.hotness_count_} | ${ptr(this.hotness_count)}`
+        disp += `\n\t imt_index: ${this.imt_index_} | ${ptr(this.imt_index)}`
+        disp += `\n\t data: ${this.ptr_sized_fields_.data_} -> ${DebugSymbol.fromAddress(this.data).toString()}`
+        disp += `\n\t jniCode: ${this.ptr_sized_fields_.entry_point_from_quick_compiled_code_}  -> ${DebugSymbol.fromAddress(this.entry_point_from_quick_compiled_code).toString()}`
         return disp
-    }
-
-    getInfo(): string {
-        const quickCode: NativePointer = this.entry_point_from_quick_compiled_code
-        const jniCode: NativePointer = this.data
-        const debugInfo_jniCode = DebugSymbol.fromAddress(jniCode)
-        let jniCodeStr: string = jniCode.isNull() ? "null" : `${jniCode} -> ${debugInfo_jniCode.name} @ ${debugInfo_jniCode.moduleName}`
-        // const interpreterCode = this.handle.add(getArtMethodSpec().offset.interpreterCode).readPointer()
-        const debugInfo_quickCode = DebugSymbol.fromAddress(quickCode)
-        return `quickCode: ${quickCode} -> ${debugInfo_quickCode.name} @ ${debugInfo_quickCode.moduleName} | jniCode: ${jniCodeStr} | accessFlags: ${this.access_flags} | size: ${ptr(this.SizeOfClass)}\n`
-        // return `${this.prettyMethod()} quickCode: ${quickCode} jniCode: ${jniCodeStr} interpreterCode: ${interpreterCode}\n`
     }
 
     //   ALWAYS_INLINE CodeItemInstructionAccessor DexInstructions()
@@ -263,7 +252,7 @@ export class ArtMethod extends JSHandle implements IArtMethod, SizeOfClass {
 
     get methodName(): string {
         const PrettyJavaAccessFlagsStr: string = PrettyAccessFlags(ptr(this.handle.add(getArtMethodSpec().offset.accessFlags).readU32()))
-        return `${PrettyJavaAccessFlagsStr} ${this.PrettyMethod()}`
+        return `${PrettyJavaAccessFlagsStr}${this.PrettyMethod()}`
     }
 
     // bool ArtMethod::HasSameNameAndSignature(ArtMethod* other) 
@@ -449,7 +438,7 @@ export class ArtMethod extends JSHandle implements IArtMethod, SizeOfClass {
         }
         if (info) {
             LOGD(`↓dex_file↓\n${dex_file}\n`)
-            LOGD(`👉 ${this}\n${this.getInfo()}`)
+            LOGD(`👉 ${this}\n`)
             LOGD(`↓accessor↓\n${accessor}\n`)
         }
 
@@ -464,7 +453,7 @@ export class ArtMethod extends JSHandle implements IArtMethod, SizeOfClass {
         const bf_str: string = Array.from(new Uint8Array(bf)).map((item: number) => item.toString(16).padStart(2, '0')).join(' ')
         if (this.GetDexFile().is_compact_dex) {
             const item: CompactDexFile_CodeItem = (CodeItemInstructionAccessor.CodeItem(dex_file, this.GetCodeItem()) as CompactDexFile_CodeItem)
-            LOGZ(`[ ${start_off} | ${bf_str} ] => [ fields : ${item.fields} <- ${ptr(item.fields)} | insns_count_and_flags: ${item.insns_count_and_flags} <- ${ptr(item.insns_count_and_flags)} ]\n`)
+            LOGZ(`[ ${start_off} | ${bf_str} ] -> [ fields : ${item.fields} <- ${ptr(item.fields)} | insns_count_and_flags: ${item.insns_count_and_flags} <- ${ptr(item.insns_count_and_flags)} ]\n`)
         } else {
             const item: StandardDexFile_CodeItem = (CodeItemInstructionAccessor.CodeItem(dex_file, this.GetCodeItem()) as StandardDexFile_CodeItem)
             LOGZ(`[ ${start_off} | ${bf_str} ] \n[ registers_size: ${item.registers_size} | ins_size: ${item.ins_size} | outs_size: ${item.outs_size} | tries_size: ${item.tries_size} | debug_info_off: ${item.debug_info_off} | insns_size_in_code_units: ${item.insns_size_in_code_units} | insns: ${item.insns} ]\n`)
@@ -501,7 +490,7 @@ export class ArtMethod extends JSHandle implements IArtMethod, SizeOfClass {
 
     showOatAsm(num: number = 20, info: boolean = false) {
         newLine()
-        if (info) LOGD(`👉 ${this}\n${this.getInfo()}`)
+        if (info) LOGD(`👉 ${this}\n`)
         LOGD(this.methodName)
         newLine()
 

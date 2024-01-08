@@ -107,7 +107,7 @@ export class DexHeader extends JSHandle {
         const btStr_2: string = Array.from(new Uint8Array(bt_2)).map((item: number) => item.toString(16).padStart(2, '0')).join(' ')
         let disp: string = `DexHeader<${this.handle}>`
         if (this.handle.isNull()) return disp
-        disp += `\n\t magic: ${this.magic} | ${btStr_1} | ${btStr_2}`
+        disp += `\n\t magic: ${this.magic.replace('\n', '')} | ${btStr_1} | ${btStr_2}`
         disp += `\n\t checksum: ${this.checksum}`
         disp += `\n\t signature: ${this.signature}`
         disp += `\n\t file_size: ${this.file_size} | ${ptr(this.file_size)}`

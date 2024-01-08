@@ -1,4 +1,5 @@
-import { TraceManager } from "./android/TraceManager"
+import { ArtMethod } from "./android/implements/10/art/mirror/ArtMethod"
+import { DexFile } from "./android/implements/10/art/dexfile/DexFile"
 import "./include"
 
 globalThis.testArtMethod = () => {
@@ -8,8 +9,18 @@ globalThis.testArtMethod = () => {
         const JavaString = Java.use("java.lang.String")
         Java.use("com.unity3d.player.UnityPlayer").UnitySendMessage(JavaString.$new("1"), JavaString.$new("2"), JavaString.$new("3"))
 
-        pathToArtMethod("com.unity3d.player.UnityPlayer.UnitySendMessage").show()
+        let method: ArtMethod = pathToArtMethod("com.unity3d.player.UnityPlayer.UnitySendMessage")
+        let dexFile: DexFile = method.GetDexFile()
+        method.show()
 
+        // test parse dexFile
+        newLine()
+        LOGD(dexFile.StringDataByIdx(8907).str)
+        // LOGD(dexFile.GetFieldId(10))
+        // LOGD(dexFile.GetTypeId(617))
+        // LOGD(dexFile.GetProtoId(10))
+        // LOGD(dexFile.GetMethodId(10))
+        // LOGD(dexFile.GetClassDef(10))
     })
 }
 

@@ -2,46 +2,46 @@ type size_t = NativePointer
 
 export class InitArray {
 
-    static get linkerName(): string {
-        return Process.arch == "arm" ? "linker" : "linker64"
-    }
+  static get linkerName(): string {
+    return Process.arch == "arm" ? "linker" : "linker64"
+  }
 
-    static get init_array_linker(): NativePointer[] {
-        const soName: string = InitArray.linkerName
-        const init_array_ptr: NativePointer = Process.findModuleByName(soName)
-            .enumerateSymbols()
-            .filter(s => s.name == ".init_array")
-            .map(s => s.address)[0]
-        let functions = []
-        for (let i = 0; i < 100; i++) {
-            let functionPtr: NativePointer = init_array_ptr.add(i * Process.pointerSize).readPointer()
-            try {
-                functionPtr.readPointer() // Trigger an exception to exit the loop
-            } catch {
-                break
-            }
-            if (functionPtr.isNull()) break
-            functions.push(functionPtr)
-        }
-        return functions
+  static get init_array_linker(): NativePointer[] {
+    const soName: string = InitArray.linkerName
+    const init_array_ptr: NativePointer = Process.findModuleByName(soName)
+      .enumerateSymbols()
+      .filter(s => s.name == ".init_array")
+      .map(s => s.address)[0]
+    let functions = []
+    for (let i = 0; i < 100; i++) {
+      let functionPtr: NativePointer = init_array_ptr.add(i * Process.pointerSize).readPointer()
+      try {
+        functionPtr.readPointer() // Trigger an exception to exit the loop
+      } catch {
+        break
+      }
+      if (functionPtr.isNull()) break
+      functions.push(functionPtr)
     }
+    return functions
+  }
 
-    // https://cs.android.com/android/platform/superproject/+/master:bionic/linker/linker_soinfo.cpp;l=698?q=call_constructors&ss=android%2Fplatform%2Fsuperproject
-    // __dl__ZNK6soinfo10get_sonameEv
-    private static getSoName(soinfo: NativePointer): string {
-        return callSym<NativePointer>(
-            "__dl__ZNK6soinfo10get_sonameEv", InitArray.linkerName,
-            'pointer', ['pointer'],
-            soinfo).readCString()
-    }
+  // https://cs.android.com/android/platform/superproject/+/master:bionic/linker/linker_soinfo.cpp;l=698?q=call_constructors&ss=android%2Fplatform%2Fsuperproject
+  // __dl__ZNK6soinfo10get_sonameEv
+  private static getSoName(soinfo: NativePointer): string {
+    return callSym<NativePointer>(
+      "__dl__ZNK6soinfo10get_sonameEv", InitArray.linkerName,
+      'pointer', ['pointer'],
+      soinfo).readCString()
+  }
 
-    static cm_include: string = `
+  static cm_include: string = `
     #include <stdio.h>
     #include <gum/gumprocess.h>
     #include <gum/guminterceptor.h>
     `
 
-    static cm_code: string = `
+  static cm_code: string = `
     #if defined(__LP64__)
     #define USE_RELA 1
     #endif
@@ -248,105 +248,105 @@ export class InitArray {
     }
 
     `
-    static cm: CModule = null
-    static MapMdCalled = new Map<string, number>()
+  static cm: CModule = null
+  static MapMdCalled = new Map<string, number>()
 
-    // https://cs.android.com/android/platform/superproject/+/master:bionic/linker/linker_soinfo.cpp;l=513
-    // __dl__ZN6soinfo17call_constructorsEv
-    static Hook_CallConstructors(maxDisplayCount: number = 10, showFiniArray: boolean = true, simMdShowOnce: boolean = true) {
-        if (Process.arch == "arm") {
-            InitArray.cm_code = InitArray.cm_include + "#define __work_around_b_24465209__ 1" + InitArray.cm_code
+  // https://cs.android.com/android/platform/superproject/+/master:bionic/linker/linker_soinfo.cpp;l=513
+  // __dl__ZN6soinfo17call_constructorsEv
+  static Hook_CallConstructors(maxDisplayCount: number = 10, showFiniArray: boolean = true, simMdShowOnce: boolean = true) {
+    if (Process.arch == "arm") {
+      InitArray.cm_code = InitArray.cm_include + "#define __work_around_b_24465209__ 1" + InitArray.cm_code
+    } else {
+      InitArray.cm_code = InitArray.cm_include + "#define __LP64__ 1" + InitArray.cm_code
+    }
+    InitArray.cm = new CModule(InitArray.cm_code, {
+      get_soName: getSym("__dl__ZNK6soinfo10get_sonameEv", InitArray.linkerName),
+      onEnter_call_constructors: new NativeCallback((_ctx: CpuContext, _si: NativePointer, soName: NativePointer, init_array: NativePointer, init_array_count: number, fini_array: NativePointer, fini_array_count: number) => {
+        const soNameStr: string = soName.readCString()
+        if (simMdShowOnce) {
+          if (InitArray.MapMdCalled.has(soNameStr)) {
+            let count: number = InitArray.MapMdCalled.get(soNameStr)!
+            count++
+            InitArray.MapMdCalled.set(soNameStr, count)
+            return
+          } else {
+            InitArray.MapMdCalled.set(soNameStr, 1)
+          }
+        }
+        LOGD(`call_constructors soName: ${soNameStr} `)
+        if (init_array_count != 0) {
+          LOGD(`\tinit_array: ${init_array} | init_array_count: ${init_array_count}`)
+          let detail: string = ''
+          let loopCount: number = init_array_count > maxDisplayCount ? maxDisplayCount : init_array_count
+          for (let i = 0; i < loopCount; i++) {
+            let funcPtr: NativePointer = init_array.add(i * Process.pointerSize).readPointer()
+            let funcName: string = DebugSymbol.fromAddress(funcPtr).toString()
+            detail += `\t\t${funcName}\n`
+          }
+          detail = detail.substring(0, detail.length - 1)
+          LOGD(`\tinit_array detail: \n${detail}`)
+          if (init_array_count > maxDisplayCount) LOGZ(`\t\t... ${init_array_count - maxDisplayCount} more ...\n`)
         } else {
-            InitArray.cm_code = InitArray.cm_include + "#define __LP64__ 1" + InitArray.cm_code
+          LOGZ(`\tinit_array_count: ${init_array_count}`)
         }
-        InitArray.cm = new CModule(InitArray.cm_code, {
-            get_soName: getSym("__dl__ZNK6soinfo10get_sonameEv", InitArray.linkerName),
-            onEnter_call_constructors: new NativeCallback((_ctx: CpuContext, _si: NativePointer, soName: NativePointer, init_array: NativePointer, init_array_count: number, fini_array: NativePointer, fini_array_count: number) => {
-                const soNameStr: string = soName.readCString()
-                if (simMdShowOnce) {
-                    if (InitArray.MapMdCalled.has(soNameStr)) {
-                        let count: number = InitArray.MapMdCalled.get(soNameStr)!
-                        count++
-                        InitArray.MapMdCalled.set(soNameStr, count)
-                        return
-                    } else {
-                        InitArray.MapMdCalled.set(soNameStr, 1)
-                    }
-                }
-                LOGD(`call_constructors soName: ${soNameStr} `)
-                if (init_array_count != 0) {
-                    LOGD(`\tinit_array: ${init_array} | init_array_count: ${init_array_count}`)
-                    let detail: string = ''
-                    let loopCount: number = init_array_count > maxDisplayCount ? maxDisplayCount : init_array_count
-                    for (let i = 0; i < loopCount; i++) {
-                        let funcPtr: NativePointer = init_array.add(i * Process.pointerSize).readPointer()
-                        let funcName: string = DebugSymbol.fromAddress(funcPtr).toString()
-                        detail += `\t\t${funcName}\n`
-                    }
-                    detail = detail.substring(0, detail.length - 1)
-                    LOGD(`\tinit_array detail: \n${detail}`)
-                    if (init_array_count > maxDisplayCount) LOGZ(`\t\t... ${init_array_count - maxDisplayCount} more ...\n`)
-                } else {
-                    LOGZ(`\tinit_array_count: ${init_array_count}`)
-                }
-                if (showFiniArray) {
-                    if (fini_array_count != 0) {
-                        LOGD(`\tfini_array: ${fini_array} | fini_array_count: ${fini_array_count}`)
-                        let detail: string = ''
-                        let loopCount: number = fini_array_count > maxDisplayCount ? maxDisplayCount : fini_array_count
-                        for (let i = 0; i < loopCount; i++) {
-                            let funcPtr: NativePointer = fini_array.add(i * Process.pointerSize).readPointer()
-                            let funcName: string = DebugSymbol.fromAddress(funcPtr).toString()
-                            detail += `\t\t${funcName}\n`
-                        }
-                        detail = detail.substring(0, detail.length - 1)
-                        LOGD(`\tfini_array detail: \n${detail}`)
-                        if (fini_array_count > maxDisplayCount) LOGZ(`\t\t... ${fini_array_count - maxDisplayCount} more ...\n`)
-                    } else {
-                        LOGZ(`\tfini_array_count: ${fini_array_count}`)
-                    }
-                }
-                LOGO(`\n-----------------------------------------------------------\n`)
-            }, 'void', ['pointer', 'pointer', 'pointer', 'pointer', 'int', 'pointer', 'int'])
-        })
-        Interceptor.attach(getSym("__dl__ZN6soinfo17call_constructorsEv", InitArray.linkerName), InitArray.cm as NativeInvocationListenerCallbacks)
-    }
-
-    static get_init_array_count(soinfo: NativePointer): size_t {
-        const func = new NativeFunction(InitArray.cm.get_init_array_count, 'pointer', ['pointer'])
-        return func(soinfo) as size_t
-    }
-
-    static get_init_array(soinfo: NativePointer): NativePointer[] {
-        const func = new NativeFunction(InitArray.cm.get_init_array, 'pointer', ['pointer'])
-        const start: NativePointer = func(soinfo) as NativePointer
-        const count: number = InitArray.get_init_array_count(soinfo).toUInt32()
-        const result: NativePointer[] = []
-        for (let i = 0; i < count; i++) {
-            result.push(start.add(i * Process.pointerSize).readPointer())
+        if (showFiniArray) {
+          if (fini_array_count != 0) {
+            LOGD(`\tfini_array: ${fini_array} | fini_array_count: ${fini_array_count}`)
+            let detail: string = ''
+            let loopCount: number = fini_array_count > maxDisplayCount ? maxDisplayCount : fini_array_count
+            for (let i = 0; i < loopCount; i++) {
+              let funcPtr: NativePointer = fini_array.add(i * Process.pointerSize).readPointer()
+              let funcName: string = DebugSymbol.fromAddress(funcPtr).toString()
+              detail += `\t\t${funcName}\n`
+            }
+            detail = detail.substring(0, detail.length - 1)
+            LOGD(`\tfini_array detail: \n${detail}`)
+            if (fini_array_count > maxDisplayCount) LOGZ(`\t\t... ${fini_array_count - maxDisplayCount} more ...\n`)
+          } else {
+            LOGZ(`\tfini_array_count: ${fini_array_count}`)
+          }
         }
-        return result
-    }
+        LOGO(`\n-----------------------------------------------------------\n`)
+      }, 'void', ['pointer', 'pointer', 'pointer', 'pointer', 'int', 'pointer', 'int'])
+    })
+    Interceptor.attach(getSym("__dl__ZN6soinfo17call_constructorsEv", InitArray.linkerName), InitArray.cm as NativeInvocationListenerCallbacks)
+  }
 
-    static get_fini_array_count(soinfo: NativePointer): size_t {
-        const func = new NativeFunction(InitArray.cm.get_fini_array_count, 'pointer', ['pointer'])
-        return func(soinfo) as size_t
-    }
+  static get_init_array_count(soinfo: NativePointer): size_t {
+    const func = new NativeFunction(InitArray.cm.get_init_array_count, 'pointer', ['pointer'])
+    return func(soinfo) as size_t
+  }
 
-    static get_fini_array(soinfo: NativePointer): NativePointer[] {
-        const func = new NativeFunction(InitArray.cm.get_fini_array, 'pointer', ['pointer'])
-        const start: NativePointer = func(soinfo) as NativePointer
-        const count: number = InitArray.get_fini_array_count(soinfo).toUInt32()
-        const result: NativePointer[] = []
-        for (let i = 0; i < count; i++) {
-            result.push(start.add(i * Process.pointerSize).readPointer())
-        }
-        return result
+  static get_init_array(soinfo: NativePointer): NativePointer[] {
+    const func = new NativeFunction(InitArray.cm.get_init_array, 'pointer', ['pointer'])
+    const start: NativePointer = func(soinfo) as NativePointer
+    const count: number = InitArray.get_init_array_count(soinfo).toUInt32()
+    const result: NativePointer[] = []
+    for (let i = 0; i < count; i++) {
+      result.push(start.add(i * Process.pointerSize).readPointer())
     }
+    return result
+  }
+
+  static get_fini_array_count(soinfo: NativePointer): size_t {
+    const func = new NativeFunction(InitArray.cm.get_fini_array_count, 'pointer', ['pointer'])
+    return func(soinfo) as size_t
+  }
+
+  static get_fini_array(soinfo: NativePointer): NativePointer[] {
+    const func = new NativeFunction(InitArray.cm.get_fini_array, 'pointer', ['pointer'])
+    const start: NativePointer = func(soinfo) as NativePointer
+    const count: number = InitArray.get_fini_array_count(soinfo).toUInt32()
+    const result: NativePointer[] = []
+    for (let i = 0; i < count; i++) {
+      result.push(start.add(i * Process.pointerSize).readPointer())
+    }
+    return result
+  }
 }
 
 declare global {
-    var init_array_linker: NativePointer[]
+  var init_array_linker: NativePointer[]
 }
 
 globalThis.init_array_linker = InitArray.init_array_linker

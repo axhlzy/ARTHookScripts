@@ -59,18 +59,18 @@ export class ArtClass extends ArtObject implements SizeOfClass {
     toString(): string {
         let disp: string = `ArtClass< ${this.handle} >`
         if (this.handle.isNull()) return disp
-        disp += `\n\t class_loader: ${this.class_loader} => ArtClassLoader< ${this.class_loader.root.handle} >`
-        disp += `\n\t component_type: ${this.component_type} => ArtClass< ${this.component_type.root.handle} >`
-        disp += `\n\t dex_cache: ${this.dex_cache} => DexCache<P:${this.dex_cache.root.handle} >`
+        disp += `\n\t class_loader: ${this.class_loader} -> ArtClassLoader< ${this.class_loader.root.handle} >`
+        disp += `\n\t component_type: ${this.component_type} -> ArtClass< ${this.component_type.root.handle} >`
+        disp += `\n\t dex_cache: ${this.dex_cache} -> DexCache<P:${this.dex_cache.root.handle} >`
         disp += `\n\t ext_data: ${this.ext_data}`
         disp += `\n\t iftable: ${this.iftable}`
-        disp += `\n\t name: ${this.name} => ${this.name_str}`
-        disp += `\n\t super_class: ${this.super_class} => ArtClass< ${this.super_class.root.handle} >`
+        disp += `\n\t name: ${this.name} -> ${this.name_str}`
+        disp += `\n\t super_class: ${this.super_class} -> ArtClass< ${this.super_class.root.handle} >`
         disp += `\n\t vtable: ${this.vtable}`
         disp += `\n\t ifields: ${this.ifields} | ${ptr(this.ifields)}`
         disp += `\n\t methods: ${this.methods} | ${ptr(this.methods)}`
         disp += `\n\t sfields: ${this.sfields} | ${ptr(this.sfields)}`
-        disp += `\n\t access_flags: ${this.access_flags} => ${this.access_flags_string}`
+        disp += `\n\t access_flags: ${this.access_flags} -> ${this.access_flags_string}`
         disp += `\n\t class_flags: ${this.class_flags}`
         disp += `\n\t class_size: ${this.class_size}`
         disp += `\n\t clinit_thread_id: ${this.clinit_thread_id}`
