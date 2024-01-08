@@ -41,4 +41,9 @@ export class JSHandle implements SizeOfClass {
     show(): void {
         LOGD(this.toString())
     }
+
+    toString(): string {
+        let disp: string = `JSHandle< ${this.handle} >`
+        return disp
+    }
 }

@@ -33,4 +33,11 @@ export class ArtObject extends JSHandle implements SizeOfClass {
         return this.handle.add(0x4).readU32()
     }
 
+    toString(): string {
+        let disp: string = `ArtObject< ${this.handle} >`
+        if (this.handle.isNull()) return disp
+        disp += `\n${this.klass.toString()}`
+        return disp
+    }
+
 }

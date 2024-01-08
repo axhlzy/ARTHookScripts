@@ -19,6 +19,15 @@ export class CodeItemDataAccessor extends CodeItemInstructionAccessor implements
         this.tries_size_.writeU16(tries_size)
     }
 
+    toString(): string {
+        let disp: string = `CodeItemDataAccessor< ${this.handle} >`
+        if (this.handle.isNull()) return disp
+        disp += `\nregisters_size_: ${this.registers_size}`
+        disp += `\nins_size_: ${this.ins_size}`
+        disp += `\nouts_size_: ${this.outs_size}`
+        disp += `\ntries_size_: ${this.tries_size}`
+    }
+
     get SizeOfClass(): number {
         return CodeItemDataAccessor.SIZE_OF_CodeItemDataAccessor + super.SizeOfClass
     }

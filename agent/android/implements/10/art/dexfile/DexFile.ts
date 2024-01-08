@@ -112,8 +112,8 @@ export class DexFile extends JSHandle {
         return super.SizeOfClass + (this.hiddenapi_domain_.add(0x4).sub(this.currentHandle).toInt32()) + this.VirtualClassOffset
     }
 
-    toString(): String {
-        let disp: String = `DexFile<${this.handle}>`
+    toString(): string {
+        let disp: string = `DexFile<${this.handle}>`
         if (this.handle.isNull()) return disp
         disp += `\n\t location: ${this.location} @ ${this.location_}`
         disp += `\n\t location_checksum: ${this.location_checksum} ( ${ptr(this.location_checksum)} ) is_compact_dex: ${this.is_compact_dex}`

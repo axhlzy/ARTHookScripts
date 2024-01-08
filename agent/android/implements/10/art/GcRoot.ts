@@ -20,7 +20,7 @@ export class GcRoot<T extends ArtObject> extends JSHandle {
         return this._factory(this.handle)
     }
 
-    toString(): String {
+    toString(): string {
         return `GcRoot<(read32)${this.lsthandle} -> ${this.handle}>`
     }
 

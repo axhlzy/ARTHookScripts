@@ -21,7 +21,7 @@ export class CompactDexFile_CodeItem extends DexFile_CodeItem {
         super(dex_pc)
     }
 
-    toString(): String {
+    toString(): string {
         let disp: string = `CompactDexFile::CodeItem<${this.handle}>`
         disp += `\nfields: ${this.fields} | insns_count_and_flags: ${this.insns_count_and_flags} | insns: ${this.insns}`
         return disp

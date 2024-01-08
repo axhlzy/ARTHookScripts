@@ -29,7 +29,7 @@ export class StandardDexFile_CodeItem extends DexFile_CodeItem {
         super(dex_pc)
     }
 
-    toString(): String {
+    toString(): string {
         let disp: string = `StandardDexFile::CodeItem<${this.handle}>`
         disp += `\nregisters_size: ${this.registers_size} | ins_size: ${this.ins_size} | outs_size: ${this.outs_size} | tries_size: ${this.tries_size} | debug_info_off: ${this.debug_info_off} | insns_size_in_code_units: ${this.insns_size_in_code_units} | insns: ${this.insns}`
         return disp

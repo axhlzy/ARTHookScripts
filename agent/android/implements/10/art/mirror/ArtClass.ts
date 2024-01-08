@@ -56,7 +56,7 @@ export class ArtClass extends ArtObject implements SizeOfClass {
         return this.handle.add(super.SizeOfClass).add(this.VirtualClassOffset)
     }
 
-    toString(): String {
+    toString(): string {
         let disp: string = `ArtClass< ${this.handle} >`
         if (this.handle.isNull()) return disp
         disp += `\n\t class_loader: ${this.class_loader} => ArtClassLoader< ${this.class_loader.root.handle} >`

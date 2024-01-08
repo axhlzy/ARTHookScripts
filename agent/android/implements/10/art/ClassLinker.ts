@@ -60,8 +60,8 @@ export class ClassLinker extends JSHandle {
         return this.cha_.add(PointerSize).sub(this.handle).toInt32()
     }
 
-    toString(): String {
-        let disp: String = `ClassLinker<${this.handle}>`
+    toString(): string {
+        let disp: string = `ClassLinker<${this.handle}>`
         return disp
     }
 

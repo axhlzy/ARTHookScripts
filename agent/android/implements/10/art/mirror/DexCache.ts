@@ -44,7 +44,7 @@ export class DexCache extends ArtObject implements SizeOfClass {
         super(handle)
     }
 
-    toString(): String {
+    toString(): string {
         let disp: string = `DexCache<P:${this.handle} | C:${this.currentHandle}>`
         if (this.handle.isNull()) return disp
         disp += `\n\t location: ${this.location_str} @ ${this.location.root.handle}`

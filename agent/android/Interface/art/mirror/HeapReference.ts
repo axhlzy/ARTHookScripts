@@ -20,7 +20,7 @@ export class HeapReference<T extends JSHandle | NativePointer | Object> extends 
         return this._factory(this.handle) as T
     }
 
-    toString(): String {
+    toString(): string {
         return `HeapReference<${this.handle}> [U32]`
     }
 

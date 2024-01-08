@@ -53,6 +53,24 @@ export class StackVisitor extends JSHandle {
         super(handle)
     }
 
+    toString(): string {
+        let disp: string = `StackVisitor< ${this.handle} >`
+        if (this.handle.isNull()) return disp
+        disp += `\n${this.thread}`
+        disp += `\n${this.walk_kind}`
+        disp += `\n${this.cur_shadow_frame}`
+        disp += `\n${this.cur_quick_frame}`
+        disp += `\n${this.cur_quick_frame_pc}`
+        disp += `\n${this.cur_oat_quick_method_header}`
+        disp += `\n${this.num_frames}`
+        disp += `\n${this.cur_depth}`
+        disp += `\n${this.current_code_info}`
+        disp += `\n${this.current_inline_frames}`
+        disp += `\n${this.context}`
+        disp += `\n${this.check_suspended}`
+        return disp
+    }
+
     get CurrentHandle(): NativePointer {
         return this.handle.add(super.SizeOfClass).add(this.VirtualClassOffset)
     }

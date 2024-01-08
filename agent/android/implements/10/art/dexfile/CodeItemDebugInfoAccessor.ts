@@ -14,6 +14,14 @@ export class CodeItemDebugInfoAccessor extends CodeItemDataAccessor implements S
         this.debug_info_offset_.writeU32(debug_info_offset)
     }
 
+    toString(): string {
+        let disp: string = `CodeItemDebugInfoAccessor< ${this.handle} >`
+        if (this.handle.isNull()) return disp
+        disp += `\ndex_file_: ${this.dex_file}`
+        disp += `\ndebug_info_offset_: ${this.debug_info_offset}`
+        return disp
+    }
+
     get SizeOfClass(): number {
         return CodeItemDebugInfoAccessor.SIZE_OF_CodeItemDebugInfoAccessor + super.SizeOfClass
     }

@@ -8,7 +8,7 @@ export class ClassExt extends ArtObject {
         super(handle)
     }
 
-    toString(): String {
+    toString(): string {
         return `ClassExt<${this.handle}>`
     }
 

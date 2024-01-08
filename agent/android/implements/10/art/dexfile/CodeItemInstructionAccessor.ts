@@ -29,7 +29,7 @@ export class CodeItemInstructionAccessor extends JSHandle implements SizeOfClass
         this.CurrentHandle.add(0x4).writePointer(insns)
     }
 
-    toString(): String {
+    toString(): string {
         let disp: string = `CodeItemInstructionAccessor<${this.handle}>`
         disp += `\ninsns_size_in_code_units: ${this.insns_size_in_code_units} | insns: ${this.insns}`
         return disp

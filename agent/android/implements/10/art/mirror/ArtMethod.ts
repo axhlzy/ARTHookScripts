@@ -152,7 +152,7 @@ export class ArtMethod extends JSHandle implements IArtMethod, SizeOfClass {
     // _ZN3art9ArtMethod12PrettyMethodEb => art::ArtMethod::PrettyMethod(bool)
     // _ZN3art9ArtMethod12PrettyMethodEPS0_b => art::ArtMethod::PrettyMethod(art::ArtMethod*, bool)
     // _ZNK3art7DexFile12PrettyMethodEjb => art::DexFile::PrettyMethod(unsigned int, bool) const
-    prettyMethod(withSignature = true): string {
+    PrettyMethod(withSignature = true): string {
         const result = new StdString();
         (Java as any).api['art::ArtMethod::PrettyMethod'](result, this.handle, withSignature ? 1 : 0)
         return result.disposeToString()
@@ -263,7 +263,7 @@ export class ArtMethod extends JSHandle implements IArtMethod, SizeOfClass {
 
     get methodName(): string {
         const PrettyJavaAccessFlagsStr: string = PrettyAccessFlags(ptr(this.handle.add(getArtMethodSpec().offset.accessFlags).readU32()))
-        return `${PrettyJavaAccessFlagsStr} ${this.prettyMethod()}`
+        return `${PrettyJavaAccessFlagsStr} ${this.PrettyMethod()}`
     }
 
     // bool ArtMethod::HasSameNameAndSignature(ArtMethod* other) 

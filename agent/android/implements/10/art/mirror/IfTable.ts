@@ -7,7 +7,7 @@ export class IfTable extends ArtObject {
         super(handle)
     }
 
-    toString(): String {
+    toString(): string {
         return `IfTable<${this.handle}>`
     }
 
