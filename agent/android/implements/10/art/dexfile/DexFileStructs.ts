@@ -197,7 +197,7 @@ export class DexTypeId extends JSHandleNotImpl {
     }
 
     get descriptor_idx(): DexStringIndex {
-        return new DexStringIndex(this.descriptor_idx_.readU16())
+        return new DexStringIndex(this.descriptor_idx_.readU32())
     }
 
     toString(): string {
@@ -549,11 +549,13 @@ export class DexFieldAnnotationsItem extends JSHandleNotImpl {
 
 export class LEB128String {
 
+    private handle: NativePointer = NULL
     private size_: NativePointer = NULL
     private data_: NativePointer = NULL
 
     private constructor(handle: NativePointer) {
-        this.size_ = handle
+        this.handle = handle
+        this.size_ = this.handle
         this.data_ = this.size_.add(0x1)
     }
 
@@ -571,14 +573,109 @@ export class LEB128String {
 
     get str(): string {
         try {
-            return this.data_.readUtf8String()
+            return this.data_.readCString()
         } catch (error) {
             return ""
         }
     }
 
     toString(): string {
-        return `'${this.str}' | Size:${this.size}`
+        let res = this.DecodeUnsignedLeb128_TS(this.handle)
+        return `${res.bytesRead} | ${res.size} | ${this.str}`
+        // return `'${this.str}' | Size:${this.size}`
+    }
+
+    // new DexFile(ptr(0x7e642f7180)).StringDataByIdx(2000).test(10000)
+    // DecodeUnsignedLeb128_TS (times:10000) cost : 154 ms
+    // DecodeUnsignedLeb128_MD (times:10000) cost : 401 ms
+    //
+    // performance testing
+    test(times: number = 10000): void {
+        const start_TS = Date.now()
+        for (let i = 0; i < times; i++) {
+            this.DecodeUnsignedLeb128_TS(this.handle)
+        }
+        const end_TS = Date.now()
+        LOGD(`DecodeUnsignedLeb128_TS (times:${times}) cost : ${end_TS - start_TS} ms`)
+        const start_MD = Date.now()
+        for (let i = 0; i < times; i++) {
+            this.DecodeUnsignedLeb128_MD(this.handle)
+        }
+        const end_MD = Date.now()
+        LOGD(`DecodeUnsignedLeb128_MD (times:${times}) cost : ${end_MD - start_MD} ms`)
+    }
+
+    DecodeUnsignedLeb128_TS(data: NativePointer): { size: number; bytesRead: NativePointer } {
+        let cur_ptr = data
+        let result = cur_ptr.readU8()
+        cur_ptr = cur_ptr.add(1)
+
+        if (result > 0x7f) {
+            let cur = cur_ptr.readU8()
+            cur_ptr = cur_ptr.add(1)
+            result = (result & 0x7f) | ((cur & 0x7f) << 7)
+
+            if (cur > 0x7f) {
+                cur = cur_ptr.readU8()
+                cur_ptr = cur_ptr.add(1)
+                result |= (cur & 0x7f) << 14
+
+                if (cur > 0x7f) {
+                    cur = cur_ptr.readU8()
+                    cur_ptr = cur_ptr.add(1)
+                    result |= (cur & 0x7f) << 21
+
+                    if (cur > 0x7f) {
+                        cur = cur_ptr.readU8()
+                        cur_ptr = cur_ptr.add(1)
+                        result |= cur << 28
+                    }
+                }
+            }
+        }
+        return { size: result, bytesRead: cur_ptr }
+    }
+
+    DecodeUnsignedLeb128_MD(data: NativePointer): { size: number; bytesRead: NativePointer } {
+        const DecodeUnsignedLeb128_func = new NativeFunction(this.cmd.DecodeUnsignedLeb128, "uint32", ["pointer"])
+        const tempMem = Memory.alloc(Process.pointerSize).writePointer(data)
+        const size: number = DecodeUnsignedLeb128_func(tempMem) as number
+        return { size, bytesRead: tempMem.readPointer() }
+    }
+
+    private static md: CModule = null
+
+    // jetbrains://clion/navigate/reference?project=libartd-dex2oat&path=~/bin/aosp/art/libartbase/base/leb128.h
+    protected get cmd(): CModule {
+        if (LEB128String.md == null) {
+            LEB128String.md = new CModule(`
+            #include <gum/gumprocess.h>
+            
+            uint32_t DecodeUnsignedLeb128(const uint8_t** data) {
+                const uint8_t* ptr = *data;
+                int result = *(ptr++);
+                if (result > 0x7f) {
+                    int cur = *(ptr++);
+                    result = (result & 0x7f) | ((cur & 0x7f) << 7);
+                    if (cur > 0x7f) {
+                    cur = *(ptr++);
+                    result |= (cur & 0x7f) << 14;
+                    if (cur > 0x7f) {
+                        cur = *(ptr++);
+                        result |= (cur & 0x7f) << 21;
+                        if (cur > 0x7f) {
+                        cur = *(ptr++);
+                        result |= cur << 28;
+                        }
+                    }
+                    }
+                }
+                *data = ptr;
+                return (uint32_t)(result);
+            }
+        `)
+        }
+        return LEB128String.md
     }
 
 }

@@ -176,8 +176,8 @@ export class DexFile extends JSHandle {
 
     StringDataByIdx(index: DexStringIndex | number): LEB128String {
         const index_: number = index instanceof DexStringIndex ? index.index : index
-        if (index_ < 0 || index_ > this.header.string_ids_size) throw new Error("index out of range")
-        const string_id = this.string_ids.add(index_ * 0x4).readU32()
+        if (index_ < 0 || index_ > this.NumStringIds()) throw new Error("index out of range")
+        const string_id = this.string_ids.add(index_ * DexStringIndex.SizeOfClass).readU32()
         const string_data = this.data_begin.add(string_id)
         return LEB128String.from(string_data)
     }
@@ -198,19 +198,20 @@ export class DexFile extends JSHandle {
         return this.type_ids_.readPointer()
     }
 
+    // size_t NumTypeIds() const
+    NumTypeIds(): number {
+        return this.header.type_ids_size
+    }
+
     // const dex::TypeId& GetTypeId(dex::TypeIndex idx) const
     GetTypeId(idx: DexTypeIndex | number): DexTypeId {
         const idx_: number = idx instanceof DexTypeIndex ? idx.index : idx
-        if (idx_ < 0 || idx_ > this.header.type_ids_size) throw new Error("index out of range")
+        if (idx_ < 0 || idx_ > this.NumTypeIds()) throw new Error("index out of range")
         return new DexTypeId(this.type_ids.add(idx_ * DexTypeId.SizeOfClass))
     }
 
     GetTypeDescriptor(type_idx: DexTypeIndex | number): string {
-        const type_idx_: number = type_idx instanceof DexTypeIndex ? type_idx.index : type_idx
-        if (type_idx_ < 0 || type_idx_ > this.header.type_ids_size) throw new Error("index out of range")
-        const type_id = this.type_ids.add(type_idx_ * 0x4).readU32()
-        const type_descriptor = this.StringDataByIdx(type_id)
-        return type_descriptor.str
+        return this.StringDataByIdx(this.GetTypeId(type_idx).descriptor_idx).str
     }
 
     get field_ids(): NativePointer {
@@ -287,7 +288,7 @@ export class DexFile extends JSHandle {
     // const char* GetClassDescriptor(const dex::ClassDef& class_def) const
     GetClassDescriptor(class_def: DexClassDef | number): string {
         const class_idx = class_def instanceof DexClassDef ? class_def.class_idx.index : class_def
-        const type_id = this.type_ids.add(class_idx * 0x4).readU32()
+        const type_id = this.type_ids.add(class_idx * DexClassDef.SizeOfClass).readU32()
         const type_descriptor = this.StringDataByIdx(type_id)
         return type_descriptor.str
     }
@@ -395,21 +396,14 @@ export class DexFile extends JSHandle {
         LOGZ(`\t[SaveTo] => ${localPath}/${localName}`)
     }
 
-    // ALWAYS_INLINE std::string PrettyMethod(uint32_t method_idx, bool with_signature = true) const {
-    //     std::string result;
-    //     AppendPrettyMethod(method_idx, with_signature, &result);
-    //     return result;
-    //   }
     // _ZNK3art7DexFile12PrettyMethodEjb
+    // ALWAYS_INLINE std::string PrettyMethod(uint32_t method_idx, bool with_signature = true) const {
     PrettyMethod(method_idx: number, with_signature: boolean = true): string {
-        // const PrettyMethodAddr = Module.findExportByName("libdexfile.so", "_ZNK3art7DexFile12PrettyMethodEjb")!
-        // const PrettyMethod = new NativeFunction(PrettyMethodAddr, "pointer", ["pointer", "pointer", "pointer"])
-        // return new StdString(PrettyMethod(this.handle, ptr(method_idx), with_signature ? ptr(1) : NULL) as NativePointer).disposeToString()
-        return new StdString(callSym<NativePointer>(
+        return StdString.fromPointers(callSym<NativePointer[]>(
             "_ZNK3art7DexFile12PrettyMethodEjb", "libdexfile.so",
-            "pointer", ["pointer", "pointer", "pointer"],
-            this.handle, ptr(method_idx), with_signature ? ptr(1) : NULL)
-        ).disposeToString()
+            ["pointer", "pointer", "pointer"],
+            ["pointer", "pointer", "pointer"],
+            this.handle, ptr(method_idx), with_signature ? ptr(1) : NULL)).toString()
     }
 
     // _ZNK3art7DexFile17CalculateChecksumEv

@@ -13,9 +13,17 @@ globalThis.testArtMethod = () => {
         let dexFile: DexFile = method.GetDexFile()
         method.show()
 
+        for (let i = dexFile.NumStringIds(); i > dexFile.NumStringIds() - 20; i--) {
+            LOGD(dexFile.StringDataByIdx(i).toString())
+        }
+
+        for (let i = dexFile.NumTypeIds(); i > dexFile.NumTypeIds() - 20; i--) {
+            LOGD(dexFile.GetTypeDescriptor(i))
+        }
         // test parse dexFile
         newLine()
         LOGD(dexFile.StringDataByIdx(8907).str)
+        dexFile.PrettyMethod(41007)
         // LOGD(dexFile.GetFieldId(10))
         // LOGD(dexFile.GetTypeId(617))
         // LOGD(dexFile.GetProtoId(10))
@@ -23,14 +31,6 @@ globalThis.testArtMethod = () => {
         // LOGD(dexFile.GetClassDef(10))
     })
 }
-
-setImmediate(() => {
-
-    // TraceManager.Trace_DefineClass()
-    // TraceManager.Trace_OpenCommon()
-    // TraceManager.Trace_CallConstructors()
-
-})
 
 globalThis.sendMessage = (a: string = "test_class", b: string = "test_function", c: string = "test_value") => {
     Java.perform(() => {

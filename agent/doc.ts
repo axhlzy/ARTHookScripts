@@ -44,5 +44,3 @@
 // this._p[3] => handle
 // this._p[4] => returnType
 // this._p[5] => argumentTypes
-
-

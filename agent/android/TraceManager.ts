@@ -35,15 +35,23 @@ export class TraceManager {
     }
 
     public static Trace_OpenCommon() {
-        setImmediate(() => { OpenCommonHookManager.getInstance().enableHook() })
+        OpenCommonHookManager.getInstance().enableHook()
     }
 
     public static Trace_DefineClass() {
-        setImmediate(() => { DefineClassHookManager.getInstance().enableHook() })
+        DefineClassHookManager.getInstance().enableHook()
     }
 
     public static Trace_CallConstructors() {
-        setImmediate(() => { InitArray.Hook_CallConstructors() })
+        InitArray.Hook_CallConstructors()
     }
 
 }
+
+setImmediate(() => {
+
+    TraceManager.Trace_DefineClass()
+    // TraceManager.Trace_OpenCommon()
+    // TraceManager.Trace_CallConstructors()
+
+})

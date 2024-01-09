@@ -4,6 +4,8 @@ export { }
 
 declare global {
     var pathToArtMethod: (path: string) => ArtMethod | null
+    // alias
+    var toArtMethod: (path: string) => ArtMethod | null
 }
 
 globalThis.pathToArtMethod = (path: string): ArtMethod | null => {
@@ -19,3 +21,5 @@ globalThis.pathToArtMethod = (path: string): ArtMethod | null => {
     })
     return retArtMethod
 }
+
+globalThis.toArtMethod = globalThis.pathToArtMethod

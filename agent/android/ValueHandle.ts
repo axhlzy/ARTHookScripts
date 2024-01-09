@@ -1,6 +1,6 @@
 import { PointerSize } from "./implements/10/art/Globals"
 
-export class ValueHandle implements SizeOfClass {
+export class ValueHandle {
 
     protected value_: NativePointerValue = NULL
 
@@ -12,19 +12,19 @@ export class ValueHandle implements SizeOfClass {
         return this.value_
     }
 
-    get Invalid_8(): boolean {
+    protected get Invalid_8(): boolean {
         return this.value_ > ptr(0xff)
     }
 
-    get Invalid_16(): boolean {
+    protected get Invalid_16(): boolean {
         return this.value_ > ptr(0xffff)
     }
 
-    get Invalid_32(): boolean {
+    protected get Invalid_32(): boolean {
         return this.value_ > ptr(0xffffffff)
     }
 
-    get Invalid_64(): boolean {
+    protected get Invalid_64(): boolean {
         return this.value_ > ptr(0xffffffffffffffff)
     }
 
@@ -51,22 +51,6 @@ export class ValueHandle implements SizeOfClass {
             return ptr(Memory.alloc(Process.pageSize).writePointer(this.value_).readU8())
         }
         return this.value_
-    }
-
-    get SizeOfClass(): number {
-        return PointerSize
-    }
-
-    get CurrentHandle(): NativePointer {
-        throw new Error("Method not implemented.")
-    }
-
-    get VirtualClassOffset(): number {
-        throw new Error("Method not implemented.")
-    }
-
-    get VirtualTableList(): NativePointer[] {
-        throw new Error("Method not implemented.")
     }
 
 }
