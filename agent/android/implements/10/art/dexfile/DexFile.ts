@@ -9,7 +9,7 @@ import { DexStringIndex, DexTypeIndex } from "./DexIndex"
 import { JSHandle } from "../../../../JSHandle"
 import { OatDexFile } from "../Oat/OatDexFile"
 import { PointerSize } from "../Globals"
-import { DexHeader } from "./Header"
+import { CompactDexHeader, DexHeader, StandardDexHeader } from "./Header"
 
 // virtual class DexFile;
 export class DexFile extends JSHandle {
@@ -167,7 +167,8 @@ export class DexFile extends JSHandle {
     }
 
     get header(): DexHeader {
-        return new DexHeader(this.header_.readPointer())
+        const this_ptr: NativePointer = this.header_.readPointer()
+        return this.is_compact_dex ? new CompactDexHeader(this_ptr) : new StandardDexHeader(this_ptr)
     }
 
     get string_ids(): NativePointer {

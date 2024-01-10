@@ -483,3 +483,5 @@ globalThis.getArtMethodSpec = getArtMethodSpec
 globalThis.getAndroidSystemProperty = getAndroidSystemProperty
 globalThis.getAndroidApiLevel = getAndroidApiLevel
 globalThis.getAndroidCodename = getAndroidCodename
+
+globalThis.D = () => { Interceptor.detachAll() }

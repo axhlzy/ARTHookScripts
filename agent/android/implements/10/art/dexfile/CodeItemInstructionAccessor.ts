@@ -1,6 +1,6 @@
 import { StandardDexFile_CodeItem } from "./StandardDexFile"
 import { CompactDexFile_CodeItem } from "./CompactDexFile"
-import { PointerSize, kInsnsSizeShift } from "../Globals"
+import { PointerSize } from "../Globals"
 import { JSHandle } from "../../../../JSHandle"
 import { ArtMethod } from "../mirror/ArtMethod"
 import { ArtInstruction } from "../Instruction"
@@ -12,6 +12,8 @@ export class CodeItemInstructionAccessor extends JSHandle implements SizeOfClass
     protected static readonly SIZE_OF_CodeItemDebugInfoAccessor = PointerSize + 0x4
     protected static readonly SIZE_OF_CodeItemDataAccessor = 0x2 * 4
 
+    public CodeItem: CompactDexFile_CodeItem | StandardDexFile_CodeItem
+
     // size of the insns array, in 2 byte code units. 0 if there is no code item.
     //   uint32_t insns_size_in_code_units_ = 0;
     insns_size_in_code_units_ = this.CurrentHandle
@@ -20,18 +22,28 @@ export class CodeItemInstructionAccessor extends JSHandle implements SizeOfClass
     // const uint16_t* insns_ = nullptr;
     insns_ = this.CurrentHandle.add(0x4) // ref ptr
 
-    constructor(insns_size_in_code_units: number = 0, insns: NativePointer = NULL) {
-        const needAllocSize: number = CodeItemInstructionAccessor.SIZE_OF_CodeItemInstructionAccessor
-            + CodeItemInstructionAccessor.SIZE_OF_CodeItemDataAccessor
-            + CodeItemInstructionAccessor.SIZE_OF_CodeItemDebugInfoAccessor
-        super(Memory.alloc(needAllocSize))
-        this.CurrentHandle.add(0x0).writeU32(insns_size_in_code_units)
-        this.CurrentHandle.add(0x4).writePointer(insns)
+    constructor(insns_size_in_code_units: number | NativePointer = 0, insns: NativePointer = NULL) {
+        if (typeof insns_size_in_code_units == "number" && insns_size_in_code_units == 0 && insns.isNull()) {
+            const needAllocSize: number = CodeItemInstructionAccessor.SIZE_OF_CodeItemInstructionAccessor
+                + CodeItemInstructionAccessor.SIZE_OF_CodeItemDataAccessor
+                + CodeItemInstructionAccessor.SIZE_OF_CodeItemDebugInfoAccessor
+            super(Memory.alloc(needAllocSize))
+            this.CurrentHandle.add(0x0).writeU32(insns_size_in_code_units)
+            this.CurrentHandle.add(0x4).writePointer(insns)
+        } else if (insns_size_in_code_units instanceof NativePointer) {
+            // LOGZ("Using NativePointer CodeItemDataAccessor CTOR")
+            const handle: NativePointer = insns_size_in_code_units // insns_size_in_code_units as handle
+            super(handle)
+        } else {
+            throw new Error("CodeItemInstructionAccessor constructor error")
+        }
     }
 
     toString(): string {
         let disp: string = `CodeItemInstructionAccessor<${this.handle}>`
-        disp += `\ninsns_size_in_code_units: ${this.insns_size_in_code_units} | insns: ${this.insns}`
+        if (this.handle.isNull()) return disp
+        disp += `\n\tinsns_size_in_code_units: ${this.insns_size_in_code_units} | insns: ${this.insns} | insns_size_in_bytes: ${this.InsnsSizeInBytes()}`
+        disp += `\n\n\tinsns: ${this.CodeItem.toString().split('\n').map((item, index) => index == 0 ? item : `\n\t${item}`).join('')}`
         return disp
     }
 
@@ -43,12 +55,14 @@ export class CodeItemInstructionAccessor extends JSHandle implements SizeOfClass
         const accessor = new CodeItemInstructionAccessor()
         if (dexFile.is_compact_dex) {
             const codeItem: CompactDexFile_CodeItem = CodeItemInstructionAccessor.CodeItem(dexFile, dex_pc) as CompactDexFile_CodeItem
-            accessor.insns_size_in_code_units = ptr(codeItem.insns_count_and_flags).shr(kInsnsSizeShift).toUInt32()
+            accessor.insns_size_in_code_units = codeItem.insns_size_in_code_units
             accessor.insns = codeItem.insns_
+            accessor.CodeItem = codeItem
         } else {
             const codeItem: StandardDexFile_CodeItem = CodeItemInstructionAccessor.CodeItem(dexFile, dex_pc) as StandardDexFile_CodeItem
             accessor.insns_size_in_code_units = codeItem.insns_size_in_code_units
             accessor.insns = codeItem.insns_
+            accessor.CodeItem = codeItem
         }
         return accessor
     }

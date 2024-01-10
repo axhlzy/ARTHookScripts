@@ -445,15 +445,15 @@ export class ArtMethod extends JSHandle implements IArtMethod, SizeOfClass {
         newLine()
         LOGD(this.methodName)
         let disp_insns_info: string = `insns_size_in_code_units: ${accessor.insns_size_in_code_units} - ${ptr(accessor.insns_size_in_code_units)}`
-        disp_insns_info += ` | method start: ${accessor.insns} | insns start ${code_item}`
+        disp_insns_info += ` | method start: ${accessor.insns} | insns start ${code_item} | DEX: ${dex_file.handle}`
         LOGD(`\n[ ${disp_insns_info} ]\n`)
 
         const start_off: number = accessor.insns.sub(code_item).toUInt32()
         const bf: ArrayBuffer = code_item.readByteArray(start_off)
         const bf_str: string = Array.from(new Uint8Array(bf)).map((item: number) => item.toString(16).padStart(2, '0')).join(' ')
         if (this.GetDexFile().is_compact_dex) {
-            const item: CompactDexFile_CodeItem = (CodeItemInstructionAccessor.CodeItem(dex_file, this.GetCodeItem()) as CompactDexFile_CodeItem)
-            LOGZ(`[ ${start_off} | ${bf_str} ] -> [ fields : ${item.fields} <- ${ptr(item.fields)} | insns_count_and_flags: ${item.insns_count_and_flags} <- ${ptr(item.insns_count_and_flags)} ]\n`)
+            const item: CompactDexFile_CodeItem = (accessor.CodeItem) as CompactDexFile_CodeItem
+            LOGZ(`[ ${start_off} | ${bf_str} ] -> [ fields : ${item.fields} | registers_size: ${item.registers_size} | ins_size: ${item.ins_size} | outs_size: ${item.outs_size} | tries_size: ${item.tries_size} | insns_count_and_flags: ${item.insns_count_and_flags} | insns_size_in_code_units: ${item.insns_size_in_code_units} ]\n`)
         } else {
             const item: StandardDexFile_CodeItem = (CodeItemInstructionAccessor.CodeItem(dex_file, this.GetCodeItem()) as StandardDexFile_CodeItem)
             LOGZ(`[ ${start_off} | ${bf_str} ] \n[ registers_size: ${item.registers_size} | ins_size: ${item.ins_size} | outs_size: ${item.outs_size} | tries_size: ${item.tries_size} | debug_info_off: ${item.debug_info_off} | insns_size_in_code_units: ${item.insns_size_in_code_units} | insns: ${item.insns} ]\n`)

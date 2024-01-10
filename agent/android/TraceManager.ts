@@ -1,6 +1,7 @@
-import { DefineClassHookManager } from "./start/DefineClass"
-import { OpenCommonHookManager } from "./start/OpenCommon"
-import { InitArray } from "./start/init_array"
+import { ExecuteSwitchImplCppManager } from "./functions/ExecuteSwitchImplCpp"
+import { DefineClassHookManager } from "./functions/DefineClass"
+import { OpenCommonHookManager } from "./functions/OpenCommon"
+import { InitArray } from "./functions/init_array"
 
 export class TraceManager {
 
@@ -46,12 +47,18 @@ export class TraceManager {
         InitArray.Hook_CallConstructors()
     }
 
+    public static Trace_ExecuteSwitchImplCpp() {
+        ExecuteSwitchImplCppManager.enableHook()
+    }
+
 }
 
 setImmediate(() => {
 
     TraceManager.Trace_DefineClass()
+    TraceManager.Trace_ExecuteSwitchImplCpp()
     // TraceManager.Trace_OpenCommon()
     // TraceManager.Trace_CallConstructors()
+
 
 })

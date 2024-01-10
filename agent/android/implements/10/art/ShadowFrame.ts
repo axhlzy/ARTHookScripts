@@ -15,31 +15,31 @@ export class ShadowFrame extends JSHandle {
 
     //   // Link to previous shadow frame or null.
     //   ShadowFrame* link_;
-    link_: NativePointer = this.CurrentHandle
+    private link_: NativePointer = this.CurrentHandle
     //   ArtMethod* method_;
-    method_: NativePointer = this.link_.add(PointerSize)
+    private method_: NativePointer = this.link_.add(PointerSize)
     //   JValue* result_register_;
-    result_register_: NativePointer = this.method_.add(PointerSize)
+    private result_register_: NativePointer = this.method_.add(PointerSize)
     //   const uint16_t* dex_pc_ptr_;
-    dex_pc_ptr_: NativePointer = this.result_register_.add(PointerSize)
+    private dex_pc_ptr_: NativePointer = this.result_register_.add(PointerSize)
     //   // Dex instruction base of the code item.
     //   const uint16_t* dex_instructions_;
-    dex_instructions_: NativePointer = this.dex_pc_ptr_.add(PointerSize)
+    private dex_instructions_: NativePointer = this.dex_pc_ptr_.add(PointerSize)
     //   LockCountData lock_count_data_;  // This may contain GC roots when lock counting is active.
     //   const uint32_t number_of_vregs_;
-    number_of_vregs_: NativePointer = this.dex_instructions_.add(PointerSize)
+    private number_of_vregs_: NativePointer = this.dex_instructions_.add(PointerSize)
     //   uint32_t dex_pc_;
-    dex_pc_: NativePointer = this.number_of_vregs_.add(PointerSize)
+    private dex_pc_: NativePointer = this.number_of_vregs_.add(0x4)
     //   int16_t cached_hotness_countdown_;
-    cached_hotness_countdown_: NativePointer = this.dex_pc_.add(0x4)
+    private cached_hotness_countdown_: NativePointer = this.dex_pc_.add(0x4)
     //   int16_t hotness_countdown_;
-    hotness_countdown_: NativePointer = this.cached_hotness_countdown_.add(0x2)
+    private hotness_countdown_: NativePointer = this.cached_hotness_countdown_.add(0x2)
 
     //   // This is a set of ShadowFrame::FrameFlags which denote special states this frame is in.
     //   // NB alignment requires that this field takes 4 bytes no matter its size. Only 3 bits are
     //   // currently used.
     //   uint32_t frame_flags_;
-    frame_flags_: NativePointer = this.hotness_countdown_.add(0x2)
+    private frame_flags_: NativePointer = this.hotness_countdown_.add(0x2)
 
     //   // This is a two-part array:
     //   //  - [0..number_of_vregs) holds the raw virtual registers, and each element here is always 4
@@ -50,7 +50,7 @@ export class ShadowFrame extends JSHandle {
     //   // be null. When a reference is stored in vX, the second (reference) part of the array will be a
     //   // copy of vX.
     //   uint32_t vregs_[0];
-    vregs_: NativePointer = this.frame_flags_.add(0x4)
+    private vregs_: NativePointer = this.frame_flags_.add(0x4)
 
     constructor(handle: NativePointer) {
         super(handle)
@@ -58,17 +58,18 @@ export class ShadowFrame extends JSHandle {
 
     toString(): string {
         let disp: string = `ShadowFrame<${this.handle}>`
-        disp += `\nlink: ${this.link}`
-        disp += `\nmethod: ${this.method}`
-        disp += `\nresult_register: ${this.result_register}`
-        disp += `\ndex_pc_ptr: ${this.dex_pc_ptr}`
-        disp += `\ndex_instructions: ${this.dex_instructions}`
-        disp += `\nnumber_of_vregs: ${this.number_of_vregs}`
-        disp += `\ndex_pc: ${this.dex_pc}`
-        disp += `\ncached_hotness_countdown: ${this.cached_hotness_countdown}`
-        disp += `\nhotness_countdown: ${this.hotness_countdown}`
-        disp += `\nframe_flags: ${this.frame_flags}`
-        disp += `\nvregs: ${this.vregs}`
+        if (this.handle.isNull()) return disp
+        disp += `\n\t link_: ${this.link_}`
+        disp += `\n\t method_: ${this.method_}`
+        disp += `\n\t result_register: ${this.result_register}`
+        disp += `\n\t dex_pc_ptr: ${this.dex_pc_ptr}`
+        disp += `\n\t dex_instructions: ${this.dex_instructions}`
+        disp += `\n\t number_of_vregs: ${this.number_of_vregs}`
+        disp += `\n\t dex_pc: ${this.dex_pc}`
+        disp += `\n\t cached_hotness_countdown: ${this.cached_hotness_countdown}`
+        disp += `\n\t hotness_countdown: ${this.hotness_countdown}`
+        disp += `\n\t frame_flags: ${this.frame_flags}`
+        // disp += `\n\t vregs: ${this.vregs}`
         return disp
     }
 

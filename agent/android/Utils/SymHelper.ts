@@ -1,5 +1,5 @@
 import { demangleName_onlyFunctionName as demangleName_ } from "../../tools/functions"
-import { SymbolManager } from "../start/SymbolManager"
+import { SymbolManager } from "../functions/SymbolManager"
 import { JSHandle } from "../JSHandle"
 
 const DEBUG_LOG: boolean = false

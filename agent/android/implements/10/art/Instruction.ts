@@ -6,6 +6,18 @@ const DEBUG_LOG: boolean = false
 
 export class ArtInstruction extends JSHandle {
 
+    constructor(handle: NativePointer) {
+        super(handle)
+    }
+
+    toString(): string {
+        let disp: string = `ArtInstruction<${this.handle}>`
+        if (this.handle.isNull()) return disp
+        disp += `\n\t SizeInCodeUnits=${this.SizeInCodeUnits}`
+        disp += `\n\t DumpHexLE=${this.dumpHexLE()}`
+        return disp
+    }
+
     // _ZN3art11Instruction17kInstructionNamesE
     // static const char* const kInstructionNames[];
     private static cached_kInstructionNames: String[] = []

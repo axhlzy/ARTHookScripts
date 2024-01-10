@@ -97,7 +97,8 @@ export class DexHeader extends JSHandle {
     }
 
     get SizeOfClass(): number {
-        return this.data_off_.add(0x4).sub(this.CurrentHandle).toInt32()
+        // return this.data_off_.add(0x4).sub(this.CurrentHandle).toUInt32()
+        return 0x70
     }
 
     toString(): string {
@@ -227,6 +228,100 @@ export class DexHeader extends JSHandle {
 
     get data_off(): NativePointerValue {
         return ptr(this.data_off_.readU32())
+    }
+
+}
+
+// https://cs.android.com/android/platform/superproject/+/android-10.0.0_r47:art/libdexfile/dex/compact_dex_file.h;l=36
+export class CompactDexHeader extends DexHeader {
+
+    // uint32_t feature_flags_ = 0u;
+    private feature_flags_: NativePointer = this.CurrentHandle.add(0x0)
+
+    // // Position in the compact dex file for the debug info table data starts.
+    // uint32_t debug_info_offsets_pos_ = 0u;
+    private debug_info_offsets_pos_: NativePointer = this.feature_flags_.add(0x4)
+
+    // // Offset into the debug info table data where the lookup table is.
+    // uint32_t debug_info_offsets_table_offset_ = 0u;
+    private debug_info_offsets_table_offset_: NativePointer = this.debug_info_offsets_pos_.add(0x4)
+
+    // // Base offset of where debug info starts in the dex file.
+    // uint32_t debug_info_base_ = 0u;
+    private debug_info_base_: NativePointer = this.debug_info_offsets_table_offset_.add(0x4)
+
+    // // Range of the shared data section owned by the dex file.
+    // uint32_t owned_data_begin_ = 0u;
+    private owned_data_begin_: NativePointer = this.debug_info_base_.add(0x4)
+    // uint32_t owned_data_end_ = 0u;
+    private owned_data_end_: NativePointer = this.owned_data_begin_.add(0x4)
+
+    constructor(handle: NativePointer) {
+        super(handle)
+    }
+
+    get CurrentHandle(): NativePointer {
+        return super.CurrentHandle.add(super.SizeOfClass)
+    }
+
+    get SizeOfClass(): number {
+        return this.owned_data_end_.add(0x4).sub(this.CurrentHandle).toUInt32()
+    }
+
+    toString(): string {
+        let disp: string = super.toString()
+        disp = disp.replace('DexHeader<', 'CompactDexHeader<')
+        if (this.handle.isNull()) return disp
+        disp += `\n\t feature_flags: ${this.feature_flags}`
+        disp += `\n\t debug_info_offsets_pos: ${this.debug_info_offsets_pos}`
+        disp += `\n\t debug_info_offsets_table_offset: ${this.debug_info_offsets_table_offset}`
+        disp += `\n\t debug_info_base: ${this.debug_info_base}`
+        disp += `\n\t owned_data_begin: ${this.owned_data_begin}`
+        disp += `\n\t owned_data_end: ${this.owned_data_end}`
+        return disp
+    }
+
+    get feature_flags(): number {
+        return this.feature_flags_.readU32()
+    }
+
+    get debug_info_offsets_pos(): number {
+        return this.debug_info_offsets_pos_.readU32()
+    }
+
+    get debug_info_offsets_table_offset(): number {
+        return this.debug_info_offsets_table_offset_.readU32()
+    }
+
+    get debug_info_base(): number {
+        return this.debug_info_base_.readU32()
+    }
+
+    get owned_data_begin(): number {
+        return this.owned_data_begin_.readU32()
+    }
+
+    get owned_data_end(): number {
+        return this.owned_data_end_.readU32()
+    }
+
+}
+
+// class Header : public DexFile::Header {
+//     // Same for now.
+//   };
+// https://cs.android.com/android/platform/superproject/+/android-10.0.0_r47:art/libdexfile/dex/standard_dex_file.h;l=31
+export class StandardDexHeader extends DexHeader {
+
+    constructor(handle: NativePointer) {
+        super(handle)
+    }
+
+    toString(): string {
+        let disp: string = super.toString()
+        disp = disp.replace('DexHeader<', 'StandardDexHeader<')
+        if (this.handle.isNull()) return disp
+        return disp
     }
 
 }
