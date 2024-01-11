@@ -1,3 +1,5 @@
+import { JSHandle } from "../../../../JSHandle"
+import { PointerSize } from "../Globals"
 import { CodeItemInstructionAccessor } from "./CodeItemInstructionAccessor"
 
 export class CodeItemDataAccessor extends CodeItemInstructionAccessor implements SizeOfClass {
@@ -11,32 +13,24 @@ export class CodeItemDataAccessor extends CodeItemInstructionAccessor implements
     // uint16_t tries_size_;
     tries_size_ = this.CurrentHandle.add(0x2 * 3)
 
-    constructor(insns_size_in_code_units?: number | NativePointer, insns?: NativePointer, registers_size: number = 0, ins_size: number = 0, outs_size: number = 0, tries_size: number = 0) {
+    constructor(insns_size_in_code_units?: number, insns?: NativePointer, registers_size: number = 0, ins_size: number = 0, outs_size: number = 0, tries_size: number = 0) {
         if (typeof insns_size_in_code_units == "number") {
             super(insns_size_in_code_units, insns)
             this.registers_size_.writeU16(registers_size)
             this.ins_size_.writeU16(ins_size)
             this.outs_size_.writeU16(outs_size)
             this.tries_size_.writeU16(tries_size)
-        } else if (insns_size_in_code_units instanceof NativePointer) {
-            super(insns_size_in_code_units, insns)
-            // LOGZ("Using NativePointer CodeItemDataAccessor CTOR")
-        } else {
-            throw new Error("CodeItemDataAccessor constructor error")
         }
     }
 
     toString(): string {
         let disp: string = `CodeItemDataAccessor<${this.handle}>`
         if (this.handle.isNull()) return disp
-        disp += `\nregisters_size_: ${this.registers_size}`
-        disp += `\nins_size_: ${this.ins_size}`
-        disp += `\nouts_size_: ${this.outs_size}`
-        disp += `\ntries_size_: ${this.tries_size}`
-    }
-
-    public static fromPointer(ptr_ref: NativePointer, fix_off: number = 4): CodeItemDataAccessor {
-        return new CodeItemDataAccessor(ptr_ref.add(fix_off))
+        disp += `\n\t registers_size_: ${this.registers_size}`
+        disp += `\n\t ins_size_: ${this.ins_size}`
+        disp += `\n\t outs_size_: ${this.outs_size}`
+        disp += `\n\t tries_size_: ${this.tries_size}`
+        return disp
     }
 
     get SizeOfClass(): number {
@@ -77,6 +71,18 @@ export class CodeItemDataAccessor extends CodeItemInstructionAccessor implements
 
     set tries_size(tries_size: number) {
         this.tries_size_.writeU16(tries_size)
+    }
+
+    public static fromRef(ref_ptr: NativePointer) {
+        const accessor: CodeItemDataAccessor = Object.create(CodeItemDataAccessor.prototype)
+        accessor.handle = ref_ptr
+        accessor.registers_size_ = ref_ptr.add(0x4 + 0x4 + PointerSize)
+        accessor.ins_size_ = accessor.registers_size_.add(0x2)
+        accessor.outs_size_ = accessor.ins_size_.add(0x2)
+        accessor.tries_size_ = accessor.outs_size_.add(0x2)
+        accessor.insns_ = ref_ptr.add(0x4 + 0x4)
+        accessor.insns_size_in_code_units_ = ref_ptr
+        return accessor
     }
 
 }

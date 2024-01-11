@@ -14,8 +14,10 @@ export class ArtThread extends JSHandle {
     toString(): string {
         let disp: string = `ArtThread<${this.handle}>`
         if (this.handle.isNull()) return disp
-        disp += `\n\t ThreadName=${this.GetThreadName()} | is_started=${this.is_started}`
-        disp += `\n\t CurrentMethod=${this.GetCurrentMethod().PrettyMethod(false)}`
+        disp += `\n\t ThreadName=${this.GetThreadName()}`
+        try {
+            disp += `\n\t CurrentMethod=${this.GetCurrentMethod().PrettyMethod(false)}`
+        } catch { }
         return disp
     }
 

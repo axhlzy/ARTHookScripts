@@ -62,9 +62,16 @@ export class ArtMethod extends JSHandle implements IArtMethod, SizeOfClass {
 
     constructor(handle: NativePointer) {
         super(handle)
-        this.ptr_sized_fields_ = {
-            data_: this.handle.add(getArtMethodSpec().offset.jniCode),
-            entry_point_from_quick_compiled_code_: this.handle.add(getArtMethodSpec().offset.quickCode)
+        try {
+            this.ptr_sized_fields_ = {
+                data_: this.handle.add(getArtMethodSpec().offset.jniCode),
+                entry_point_from_quick_compiled_code_: this.handle.add(getArtMethodSpec().offset.quickCode)
+            }
+        } catch (error) {
+            this.ptr_sized_fields_ = {
+                data_: this.imt_index_.add(0x4),
+                entry_point_from_quick_compiled_code_: this.imt_index_.add(0x4).add(PointerSize)
+            }
         }
     }
 

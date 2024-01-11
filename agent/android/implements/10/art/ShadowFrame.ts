@@ -1,15 +1,15 @@
+import { ArtInstruction } from "./Instruction"
+import { ArtMethod } from "./mirror/ArtMethod"
 import { JSHandle } from "../../../JSHandle"
 import { ArtObject } from "../../../Object"
 import { PointerSize } from "./Globals"
-import { ArtInstruction } from "./Instruction"
-import { ArtMethod } from "./mirror/ArtMethod"
+import { JValue } from "./Type/JValue"
 
 // jetbrains://clion/navigate/reference?project=libart&path=interpreter/shadow_frame.h
 
 type int16_t = number
 type uint16_t = number
 type uint32_t = number
-type JValue = NativePointer
 
 export class ShadowFrame extends JSHandle {
 
@@ -58,12 +58,13 @@ export class ShadowFrame extends JSHandle {
 
     toString(): string {
         let disp: string = `ShadowFrame<${this.handle}>`
+        seeHexA(this.handle)
         if (this.handle.isNull()) return disp
         disp += `\n\t link_: ${this.link_}`
-        disp += `\n\t method_: ${this.method_}`
+        disp += `\n\t method_: ${this.method_} -> ${this.method.PrettyMethod()}`
         disp += `\n\t result_register: ${this.result_register}`
         disp += `\n\t dex_pc_ptr: ${this.dex_pc_ptr}`
-        disp += `\n\t dex_instructions: ${this.dex_instructions}`
+        disp += `\n\t dex_instructions: ${this.dex_instructions.toString().split('\n').map((item, index) => index == 0 ? item : `\n\t${item}`).join('')}`
         disp += `\n\t number_of_vregs: ${this.number_of_vregs}`
         disp += `\n\t dex_pc: ${this.dex_pc}`
         disp += `\n\t cached_hotness_countdown: ${this.cached_hotness_countdown}`
@@ -74,23 +75,23 @@ export class ShadowFrame extends JSHandle {
     }
 
     get link(): ShadowFrame {
-        return new ShadowFrame(this.link_)
+        return new ShadowFrame(this.link_.readPointer())
     }
 
     get method(): ArtMethod {
-        return new ArtMethod(this.method_)
+        return new ArtMethod(this.method_.readPointer())
     }
 
     get result_register(): JValue {
-        return this.result_register_
+        return new JValue(this.result_register_.readPointer())
     }
 
-    get dex_pc_ptr(): uint16_t {
-        return this.dex_pc_ptr_.readPointer().toUInt32()
+    get dex_pc_ptr(): NativePointer {
+        return this.dex_pc_ptr_.readPointer()
     }
 
     get dex_instructions(): ArtInstruction {
-        return new ArtInstruction(this.dex_instructions_)
+        return new ArtInstruction(this.dex_instructions_.readPointer())
     }
 
     get number_of_vregs(): uint32_t {
@@ -117,8 +118,8 @@ export class ShadowFrame extends JSHandle {
         this.dex_pc_.writeU32(dex_pc_)
     }
 
-    set dex_pc_ptr(dex_pc_ptr_: uint16_t) {
-        this.dex_pc_ptr_.writePointer(ptr(dex_pc_ptr_))
+    set dex_pc_ptr(dex_pc_ptr_: NativePointer) {
+        this.dex_pc_ptr_.writePointer(dex_pc_ptr_)
     }
 
     get vregs(): uint32_t[] {
@@ -195,7 +196,38 @@ export class ShadowFrame extends JSHandle {
     // void SetDexPC(uint32_t dex_pc) 
     SetDexPC(dex_pc_v: uint32_t): void {
         this.dex_pc = dex_pc_v
-        this.dex_pc_ptr = 0
+        this.dex_pc_ptr = NULL
+    }
+
+    get backTrace(): ShadowFrame[] {
+        const backtrace = []
+        let sf: ShadowFrame = this
+        while (!sf.link.handle.isNull()) {
+            backtrace.push(sf)
+            sf = sf.link
+        }
+        return backtrace
+    }
+
+    public printBackTrace(simple: boolean = true): void {
+        this.backTrace.map((sf, index) => `${index}: ${simple ? sf.method.PrettyMethod() : sf.method}`).forEach(LOGD)
+    }
+
+    public printBackTraceWithSmali(simple: boolean = true, smaliLines: number = 3): void {
+        this.backTrace.forEach((sf: ShadowFrame, index: number) => {
+            const thisMethod: ArtMethod = sf.method
+            LOGD(`${index}: ${simple ? thisMethod.PrettyMethod() : thisMethod}`)
+            const dexfile = thisMethod.GetDexFile()
+            let artInstruction = sf.dex_pc_ptr.isNull() ? thisMethod.DexInstructions().InstructionAt() : new ArtInstruction(sf.dex_pc_ptr)
+            let counter: number = smaliLines
+            let disp_smali: string = ""
+            while (--counter >= 0 && artInstruction.Next().SizeInCodeUnits > 0) {
+                const offset: NativePointer = artInstruction.handle.sub(thisMethod.DexInstructions().insns)
+                disp_smali += `\t${artInstruction.handle} ${offset} -> ${artInstruction.dumpString(dexfile)}\n`
+                artInstruction = artInstruction.Next()
+            }
+            LOGZ(disp_smali.trimEnd())
+        })
     }
 
 }

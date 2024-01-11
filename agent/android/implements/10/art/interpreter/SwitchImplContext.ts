@@ -1,8 +1,8 @@
 import { JSHandleNotImpl } from "../../../../JSHandle"
-import { PointerSize } from "../Globals"
 import { ShadowFrame } from "../ShadowFrame"
-import { ArtThread } from "../Thread"
+import { PointerSize } from "../Globals"
 import { JValue } from "../Type/JValue"
+import { ArtThread } from "../Thread"
 import { CodeItemDataAccessor } from "../dexfile/CodeItemDataAccessor"
 
 export class SwitchImplContext extends JSHandleNotImpl {
@@ -29,16 +29,16 @@ export class SwitchImplContext extends JSHandleNotImpl {
     }
 
     get accessor(): CodeItemDataAccessor {
-        return CodeItemDataAccessor.fromPointer(this._accessor.readPointer())
+        return CodeItemDataAccessor.fromRef(this._accessor.readPointer())
     }
 
     get shadow_frame(): ShadowFrame {
-        return new ShadowFrame(this._shadow_frame)
+        return new ShadowFrame(this._shadow_frame.readPointer())
     }
 
     // JValue& result_register;
-    get result_register(): NativePointer {
-        return this._result_register.readPointer()
+    get result_register(): JValue {
+        return new JValue(this._result_register.readPointer())
     }
 
     get interpret_one_instruction(): boolean {
@@ -53,12 +53,12 @@ export class SwitchImplContext extends JSHandleNotImpl {
     toString(): string {
         let disp: string = `SwitchImplContext<${this.handle}>`
         if (this.handle.isNull()) return disp
-        disp += `\n\t self=${this.self}`
-        disp += `\n\t accessor_=${this._accessor}`
-        disp += `\n\t shadow_frame_=${this._shadow_frame}`
-        disp += `\n\t result_register=${this.result_register}`
-        disp += `\n\t interpret_one_instruction=${this.interpret_one_instruction}`
-        disp += `\n\t result_=${this._result}`
+        disp += `\n\t self=${this._self.readPointer()} <- ${this._self}`
+        disp += `\n\t accessor_=${this._accessor.readPointer()} <- ${this._accessor}`
+        disp += `\n\t shadow_frame_=${this._shadow_frame.readPointer()} <- ${this._shadow_frame}`
+        disp += `\n\t result_register=${this.result_register} <- ${this._result_register}`
+        disp += `\n\t interpret_one_instruction=${this.interpret_one_instruction} <- ${this._interpret_one_instruction}`
+        disp += `\n\t result_=${this._result.readPointer()} <- ${this._result}`
         return disp
     }
 

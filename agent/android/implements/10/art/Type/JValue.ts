@@ -1,4 +1,4 @@
-import { JSHandle, JSHandleNotImpl } from "../../../../JSHandle"
+import { JSHandleNotImpl } from "../../../../JSHandle"
 import { ArtObject } from "../../../../Object"
 
 export class JValue extends JSHandleNotImpl {
@@ -70,15 +70,15 @@ export class JValue extends JSHandleNotImpl {
     toString(): string {
         let disp: string = `JValue<${this.handle}>`
         if (this.handle.isNull()) return disp
-        disp += ` z=${this.z_}`
-        disp += ` b=${this.b_}`
-        disp += ` c=${this.c_}`
-        disp += ` s=${this.s_}`
-        disp += ` i=${this.i_}`
-        disp += ` j=${this.j_}`
-        disp += ` f=${this.f_}`
-        disp += ` d=${this.d_}`
-        disp += ` l=${this.l_}`
+        disp += `\n\t z=${this.z_}`
+        disp += `\n\t b=${this.b_}`
+        disp += `\n\t c=${this.c_}`
+        disp += `\n\t s=${this.s_}`
+        disp += `\n\t i=${this.i_}`
+        disp += `\n\t j=${this.j_}`
+        disp += `\n\t f=${this.f_}`
+        disp += `\n\t d=${this.d_}`
+        disp += `\n\t l=${this.l_}`
         return disp
     }
 

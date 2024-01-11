@@ -1,3 +1,4 @@
+
 import { SwitchImplContext } from "../implements/10/art/interpreter/SwitchImplContext"
 
 // https://cs.android.com/android/platform/superproject/+/android-10.0.0_r47:art/runtime/interpreter/interpreter_switch_impl-inl.h;l=2625
@@ -42,12 +43,22 @@ export class ExecuteSwitchImplCppManager {
                 Interceptor.attach(hookAddress, {
                     onEnter: function (args) {
                         const ctx: SwitchImplContext = new SwitchImplContext(args[0])
-                        LOGD(`${ctx.handle}`)
-                        LOGD(`${ctx.self}`)
-                        LOGD(`${ctx.self.GetCurrentMethod().PrettyMethod()}`)
-                    },
-                    onLeave: function (retval) {
-                        // LOGD("result: " + this.ctx.result)
+                        // LOGD(ctx.shadow_frame)
+
+                        ctx.shadow_frame.printBackTraceWithSmali()
+
+                        // const dexfile = ctx.self.GetCurrentMethod().GetDexFile()
+                        // LOGD(ctx.accessor)
+                        // let offset = 0
+                        // let allsize = ctx.self.GetCurrentMethod().DexInstructions().insns_size_in_code_units
+                        // while (allsize * 2 > offset) {
+                        //     LOGD(ctx.accessor.InstructionAt(offset).dumpString(dexfile))
+                        //     offset += ctx.accessor.InstructionAt(offset).SizeInCodeUnits
+                        // }
+
+                        // LOGD(ctx.shadow_frame)
+                        // LOGD(ctx.result_register)
+
                         newLine()
                     }
                 })

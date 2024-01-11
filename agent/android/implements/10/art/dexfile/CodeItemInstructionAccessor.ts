@@ -22,7 +22,7 @@ export class CodeItemInstructionAccessor extends JSHandle implements SizeOfClass
     // const uint16_t* insns_ = nullptr;
     insns_ = this.CurrentHandle.add(0x4) // ref ptr
 
-    constructor(insns_size_in_code_units: number | NativePointer = 0, insns: NativePointer = NULL) {
+    constructor(insns_size_in_code_units: number = 0, insns: NativePointer = NULL) {
         if (typeof insns_size_in_code_units == "number" && insns_size_in_code_units == 0 && insns.isNull()) {
             const needAllocSize: number = CodeItemInstructionAccessor.SIZE_OF_CodeItemInstructionAccessor
                 + CodeItemInstructionAccessor.SIZE_OF_CodeItemDataAccessor
@@ -30,12 +30,6 @@ export class CodeItemInstructionAccessor extends JSHandle implements SizeOfClass
             super(Memory.alloc(needAllocSize))
             this.CurrentHandle.add(0x0).writeU32(insns_size_in_code_units)
             this.CurrentHandle.add(0x4).writePointer(insns)
-        } else if (insns_size_in_code_units instanceof NativePointer) {
-            // LOGZ("Using NativePointer CodeItemDataAccessor CTOR")
-            const handle: NativePointer = insns_size_in_code_units // insns_size_in_code_units as handle
-            super(handle)
-        } else {
-            throw new Error("CodeItemInstructionAccessor constructor error")
         }
     }
 

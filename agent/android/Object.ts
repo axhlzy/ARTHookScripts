@@ -6,10 +6,10 @@ export class ArtObject extends JSHandle implements SizeOfClass {
 
     // // The Class representing the type of the object.
     // HeapReference<Class> klass_;
-    protected klass_: NativePointer // 0x4
+    protected klass_: NativePointer = this.handle // 0x4
     // // Monitor and hash code information.
     // uint32_t monitor_;
-    protected monitor_: NativePointer // 0x4
+    protected monitor_: NativePointer = this.handle.add(0x4) // 0x4
 
     constructor(handle: NativePointer) {
         super(handle)
@@ -36,7 +36,7 @@ export class ArtObject extends JSHandle implements SizeOfClass {
     toString(): string {
         let disp: string = `ArtObject< ${this.handle} >`
         if (this.handle.isNull()) return disp
-        disp += `\n${this.klass.toString()}`
+        // disp += `\n${this.klass.toString()}`
         return disp
     }
 

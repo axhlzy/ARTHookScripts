@@ -1,6 +1,6 @@
-import './CodeItemDataAccessor'
-import './CodeItemDebugInfoAccessor'
 import './CodeItemInstructionAccessor'
+import './CodeItemDebugInfoAccessor'
+import './CodeItemDataAccessor'
 import './StandardDexFile'
 import './CompactDexFile'
 import './DexFileStructs'
