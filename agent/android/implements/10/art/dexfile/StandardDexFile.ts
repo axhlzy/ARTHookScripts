@@ -11,19 +11,19 @@ export class StandardDexFile extends DexFile {
 export class StandardDexFile_CodeItem extends DexFile_CodeItem {
 
     // uint16_t registers_size_;
-    registers_size_ = this.CurrentHandle
+    private registers_size_ = this.CurrentHandle
     // uint16_t ins_size_;
-    ins_size_ = this.CurrentHandle.add(0x2 * 1)
+    private ins_size_ = this.CurrentHandle.add(0x2 * 1)
     // uint16_t outs_size_;
-    outs_size_ = this.CurrentHandle.add(0x2 * 2)
+    private outs_size_ = this.CurrentHandle.add(0x2 * 2)
     // uint16_t tries_size_;
-    tries_size_ = this.CurrentHandle.add(0x2 * 3)
+    private tries_size_ = this.CurrentHandle.add(0x2 * 3)
     // uint32_t debug_info_off_;
-    debug_info_off_ = this.CurrentHandle.add(0x2 * 4)
+    private debug_info_off_ = this.CurrentHandle.add(0x2 * 4)
     // uint32_t insns_size_in_code_units_;
-    insns_size_in_code_units_ = this.CurrentHandle.add(0x2 * 4 + 0x4 * 1)
+    private insns_size_in_code_units_ = this.CurrentHandle.add(0x2 * 4 + 0x4 * 1)
     // uint16_t insns_[1]
-    insns_ = this.CurrentHandle.add(0x2 * 4 + 0x4 * 2)
+    public insns_ = this.CurrentHandle.add(0x2 * 4 + 0x4 * 2)
 
     constructor(dex_pc: NativePointer) {
         super(dex_pc)

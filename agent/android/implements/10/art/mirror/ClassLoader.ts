@@ -7,18 +7,18 @@ export class ArtClassLoader extends ArtObject {
 
     // // Field order required by test "ValidateFieldOrderOfJavaCppUnionClasses".
     // HeapReference<Object> packages_;
-    packages_: NativePointer = this.CurrentHandle
+    private packages_: NativePointer = this.CurrentHandle
     // HeapReference<ClassLoader> parent_;
-    parent_: NativePointer = this.packages_.add(HeapReference.Size)
+    private parent_: NativePointer = this.packages_.add(HeapReference.Size)
     // HeapReference<Object> proxyCache_;
-    proxyCache_: NativePointer = this.parent_.add(HeapReference.Size)
+    private proxyCache_: NativePointer = this.parent_.add(HeapReference.Size)
     // // Native pointer to class table, need to zero this out when image writing.
     // uint32_t padding_ ATTRIBUTE_UNUSED;
-    padding_: NativePointer = this.proxyCache_.add(HeapReference.Size)
+    private padding_: NativePointer = this.proxyCache_.add(HeapReference.Size)
     // uint64_t allocator_;
-    allocator_: NativePointer = this.padding_.add(0x4)
+    private allocator_: NativePointer = this.padding_.add(0x4)
     // uint64_t class_table_;
-    class_table_: NativePointer = this.allocator_.add(0x8)
+    private class_table_: NativePointer = this.allocator_.add(0x8)
 
     constructor(handle: NativePointer) {
         super(handle)

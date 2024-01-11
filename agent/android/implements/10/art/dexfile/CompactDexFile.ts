@@ -1,5 +1,5 @@
-import { kInsnsSizeShift } from "../Globals"
 import { DexFile, DexFile_CodeItem } from "./DexFile"
+import { kInsnsSizeShift } from "../Globals"
 
 export class CompactDexFile extends DexFile {
 

@@ -5,13 +5,13 @@ import { CodeItemInstructionAccessor } from "./CodeItemInstructionAccessor"
 export class CodeItemDataAccessor extends CodeItemInstructionAccessor implements SizeOfClass {
 
     // uint16_t registers_size_;
-    registers_size_ = this.CurrentHandle.add(0x0)
+    private registers_size_ = this.CurrentHandle.add(0x0)
     // uint16_t ins_size_;
-    ins_size_ = this.CurrentHandle.add(0x2)
+    private ins_size_ = this.CurrentHandle.add(0x2)
     // uint16_t outs_size_;
-    outs_size_ = this.CurrentHandle.add(0x2 * 2)
+    private outs_size_ = this.CurrentHandle.add(0x2 * 2)
     // uint16_t tries_size_;
-    tries_size_ = this.CurrentHandle.add(0x2 * 3)
+    private tries_size_ = this.CurrentHandle.add(0x2 * 3)
 
     constructor(insns_size_in_code_units?: number, insns?: NativePointer, registers_size: number = 0, ins_size: number = 0, outs_size: number = 0, tries_size: number = 0) {
         if (typeof insns_size_in_code_units == "number") {
@@ -80,8 +80,8 @@ export class CodeItemDataAccessor extends CodeItemInstructionAccessor implements
         accessor.ins_size_ = accessor.registers_size_.add(0x2)
         accessor.outs_size_ = accessor.ins_size_.add(0x2)
         accessor.tries_size_ = accessor.outs_size_.add(0x2)
-        accessor.insns_ = ref_ptr.add(0x4 + 0x4)
-        accessor.insns_size_in_code_units_ = ref_ptr
+        Reflect.defineProperty(accessor, 'insns_', ref_ptr.add(0x4 + 0x4))
+        Reflect.defineProperty(accessor, 'insns_size_in_code_units_', ref_ptr)
         return accessor
     }
 

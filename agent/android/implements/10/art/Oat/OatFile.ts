@@ -5,44 +5,44 @@ import { PointerSize } from "../Globals"
 export class OatFile extends JSHandle {
 
     // const std::string location_;
-    location_ = this.currentHandle
+    private location_ = this.currentHandle
     // std::unique_ptr<VdexFile> vdex_;
-    vdex_ = this.location_.add(PointerSize * 3)
+    private vdex_ = this.location_.add(PointerSize * 3)
     // const uint8_t* begin_;
-    begin_ = this.vdex_.add(PointerSize)
+    private begin_ = this.vdex_.add(PointerSize)
     // const uint8_t* end_;
-    end_ = this.begin_.add(PointerSize)
+    private end_ = this.begin_.add(PointerSize)
     // const uint8_t* data_bimg_rel_ro_begin_;
-    data_bimg_rel_ro_begin_ = this.end_.add(PointerSize)
+    private data_bimg_rel_ro_begin_ = this.end_.add(PointerSize)
     // const uint8_t* data_bimg_rel_ro_end_;
-    data_bimg_rel_ro_end_ = this.data_bimg_rel_ro_begin_.add(PointerSize)
+    private data_bimg_rel_ro_end_ = this.data_bimg_rel_ro_begin_.add(PointerSize)
     // uint8_t* bss_begin_;
-    bss_begin_ = this.data_bimg_rel_ro_end_.add(PointerSize)
+    private bss_begin_ = this.data_bimg_rel_ro_end_.add(PointerSize)
     // uint8_t* bss_end_;
-    bss_end_ = this.bss_begin_.add(PointerSize)
+    private bss_end_ = this.bss_begin_.add(PointerSize)
     // uint8_t* bss_methods_;
-    bss_methods_ = this.bss_end_.add(PointerSize)
+    private bss_methods_ = this.bss_end_.add(PointerSize)
     // uint8_t* bss_roots_;
-    bss_roots_ = this.bss_methods_.add(PointerSize)
+    private bss_roots_ = this.bss_methods_.add(PointerSize)
     // const bool is_executable_;
-    is_executable_ = this.bss_roots_.add(PointerSize)
+    private is_executable_ = this.bss_roots_.add(PointerSize)
     // uint8_t* vdex_begin_;
-    vdex_begin_ = this.is_executable_.add(PointerSize)
+    private vdex_begin_ = this.is_executable_.add(PointerSize)
     // uint8_t* vdex_end_;
-    vdex_end_ = this.vdex_begin_.add(PointerSize)
+    private vdex_end_ = this.vdex_begin_.add(PointerSize)
     // std::vector<const OatDexFile*> oat_dex_files_storage_;
-    oat_dex_files_storage_ = this.vdex_end_.add(PointerSize)
+    private oat_dex_files_storage_ = this.vdex_end_.add(PointerSize)
     // using Table = AllocationTrackingSafeMap<std::string_view, const OatDexFile*, kAllocatorTagOatFile>;
     // Table oat_dex_files_;
-    oat_dex_files_ = this.oat_dex_files_storage_.add(PointerSize)
+    private oat_dex_files_ = this.oat_dex_files_storage_.add(PointerSize)
     // mutable Mutex secondary_lookup_lock_ DEFAULT_MUTEX_ACQUIRED_AFTER;
-    secondary_lookup_lock_ = this.oat_dex_files_.add(PointerSize)
+    private secondary_lookup_lock_ = this.oat_dex_files_.add(PointerSize)
     // mutable Table secondary_oat_dex_files_ GUARDED_BY(secondary_lookup_lock_);
-    secondary_oat_dex_files_ = this.secondary_lookup_lock_.add(PointerSize)
+    private secondary_oat_dex_files_ = this.secondary_lookup_lock_.add(PointerSize)
     // mutable std::list<std::string> string_cache_ GUARDED_BY(secondary_lookup_lock_);
-    string_cache_ = this.secondary_oat_dex_files_.add(PointerSize)
+    private string_cache_ = this.secondary_oat_dex_files_.add(PointerSize)
     // std::unique_ptr<std::vector<std::unique_ptr<const DexFile>>> uncompressed_dex_files_;
-    uncompressed_dex_files_ = this.string_cache_.add(PointerSize)
+    private uncompressed_dex_files_ = this.string_cache_.add(PointerSize)
 
     constructor(handle: NativePointer) {
         super(handle)

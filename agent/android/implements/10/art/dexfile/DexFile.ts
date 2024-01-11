@@ -18,78 +18,78 @@ export class DexFile extends JSHandle {
     public static readonly Compact_InsnsOffset: number = 0x2 * 4 + 0x4 * 1
 
     // v_table
-    v_table = this.handle
+    protected v_table = this.handle
 
     // The base address of the data section (same as Begin() for standard dex).
     //   const uint8_t* const data_begin_;
-    begin_ = this.currentHandle
+    private begin_ = this.currentHandle
     // The base address of the data section (same as Begin() for standard dex).
     //   const uint8_t* const data_begin_;
-    size_ = this.begin_.add(PointerSize * 1)
+    private size_ = this.begin_.add(PointerSize * 1)
     // The base address of the data section (same as Begin() for standard dex).
     //   const uint8_t* const data_begin_;
-    data_begin_ = this.size_.add(PointerSize * 1)
+    private data_begin_ = this.size_.add(PointerSize * 1)
     // The base address of the data section (same as Begin() for standard dex).
     //   const uint8_t* const data_begin_;
-    data_size_ = this.data_begin_.add(PointerSize * 1)
+    private data_size_ = this.data_begin_.add(PointerSize * 1)
     // Typically the dex file name when available, alternatively some identifying string.
     //
     // The ClassLinker will use this to match DexFiles the boot class
     // path to DexCache::GetLocation when loading from an image.
     // const std::string location_;
-    location_ = this.data_size_.add(PointerSize * 1) // pointerSize * 3
+    private location_ = this.data_size_.add(PointerSize * 1) // pointerSize * 3
     // const uint32_t location_checksum_;
-    location_checksum_ = this.location_.add(PointerSize * 3)
+    private location_checksum_ = this.location_.add(PointerSize * 3)
     // Points to the header section.
     //   const Header* const header_;
-    header_ = this.location_checksum_.add(0x4).add(0x4) // 后面计算oat_dex_file_缺了0x4 所以这里应该是内存对齐 （uint32_t -> 0x8）
+    private header_ = this.location_checksum_.add(0x4).add(0x4) // 后面计算oat_dex_file_缺了0x4 所以这里应该是内存对齐 （uint32_t -> 0x8）
     // Points to the base of the string identifier list.
     //   const dex::StringId* const string_ids_;
-    string_ids_ = this.header_.add(PointerSize * 1)
+    private string_ids_ = this.header_.add(PointerSize * 1)
     // Points to the base of the type identifier list.
     //   const dex::TypeId* const type_ids_;
-    type_ids_ = this.string_ids_.add(PointerSize * 1)
+    private type_ids_ = this.string_ids_.add(PointerSize * 1)
     //   // Points to the base of the field identifier list.
     //   const dex::FieldId* const field_ids_;
-    field_ids_ = this.type_ids_.add(PointerSize * 1)
+    private field_ids_ = this.type_ids_.add(PointerSize * 1)
     // Points to the base of the method identifier list.
     //   const dex::MethodId* const method_ids_;
-    method_ids_ = this.field_ids_.add(PointerSize * 1)
+    private method_ids_ = this.field_ids_.add(PointerSize * 1)
     // Points to the base of the prototype identifier list.
     //   const dex::ProtoId* const proto_ids_;
-    proto_ids_ = this.method_ids_.add(PointerSize * 1)
+    private proto_ids_ = this.method_ids_.add(PointerSize * 1)
     // Points to the base of the class definition list.
     // Points to the base of the class definition list.
     //   const dex::ClassDef* const class_defs_;
-    class_defs_ = this.proto_ids_.add(PointerSize * 1)
+    private class_defs_ = this.proto_ids_.add(PointerSize * 1)
     // Points to the base of the method handles list.
     // Points to the base of the method handles list.
     //   const dex::MethodHandleItem* method_handles_;
-    method_handles_ = this.class_defs_.add(PointerSize * 1)
+    private method_handles_ = this.class_defs_.add(PointerSize * 1)
     // Number of elements in the method handles list.
     //   size_t num_method_handles_;
-    num_method_handles_ = this.method_handles_.add(PointerSize * 1)
+    private num_method_handles_ = this.method_handles_.add(PointerSize * 1)
     // Points to the base of the call sites id list.
     //   const dex::CallSiteIdItem* call_site_ids_;
-    call_site_ids_ = this.num_method_handles_.add(PointerSize * 1)
+    private call_site_ids_ = this.num_method_handles_.add(PointerSize * 1)
     // Number of elements in the call sites list.
     //   size_t num_call_site_ids_;
-    num_call_site_ids_ = this.call_site_ids_.add(PointerSize * 1)
+    private num_call_site_ids_ = this.call_site_ids_.add(PointerSize * 1)
     // Points to the base of the hiddenapi class data item_, or nullptr if the dex
     // file does not have one.
     //   const dex::HiddenapiClassData* hiddenapi_class_data_;
-    hiddenapi_class_data_ = this.num_call_site_ids_.add(PointerSize * 1)
+    private hiddenapi_class_data_ = this.num_call_site_ids_.add(PointerSize * 1)
     // If this dex file was loaded from an oat file, oat_dex_file_ contains a
     // pointer to the OatDexFile it was loaded from. Otherwise oat_dex_file_ is
     // null.
     //   mutable const OatDexFile* oat_dex_file_;
-    oat_dex_file_ = this.hiddenapi_class_data_.add(PointerSize * 1)
+    private oat_dex_file_ = this.hiddenapi_class_data_.add(PointerSize * 1)
     // Manages the underlying memory allocation.
     //   std::unique_ptr<DexFileContainer> container_;
-    container_ = this.oat_dex_file_.add(PointerSize * 1)
+    private container_ = this.oat_dex_file_.add(PointerSize * 1)
     // If the dex file is a compact dex file. If false then the dex file is a standard dex file.
     //   const bool is_compact_dex_;
-    is_compact_dex_ = this.container_.add(PointerSize * 1)
+    private is_compact_dex_ = this.container_.add(PointerSize * 1)
     // The domain this dex file belongs to for hidden API access checks.
     // It is decleared `mutable` because the domain is assigned after the DexFile
     // has been created and can be changed later by the runtime.
@@ -99,7 +99,7 @@ export class DexFile extends JSHandle {
     //     kPlatform,
     //     kApplication,
     //   };
-    hiddenapi_domain_ = this.is_compact_dex_.add(0x4)
+    private hiddenapi_domain_ = this.is_compact_dex_.add(0x4)
 
     constructor(handle: NativePointer) {
         super(handle)

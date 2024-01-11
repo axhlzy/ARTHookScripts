@@ -4,12 +4,15 @@ import { JSHandle } from "../../../JSHandle"
 import { ArtObject } from "../../../Object"
 import { PointerSize } from "./Globals"
 import { JValue } from "./Type/JValue"
+import { CodeItemInstructionAccessor } from "./dexfile/CodeItemInstructionAccessor"
+import { ObjectReference } from "./ObjPtr"
 
 // jetbrains://clion/navigate/reference?project=libart&path=interpreter/shadow_frame.h
 
 type int16_t = number
 type uint16_t = number
 type uint32_t = number
+type LockCountData = NativePointer
 
 export class ShadowFrame extends JSHandle {
 
@@ -26,8 +29,9 @@ export class ShadowFrame extends JSHandle {
     //   const uint16_t* dex_instructions_;
     private dex_instructions_: NativePointer = this.dex_pc_ptr_.add(PointerSize)
     //   LockCountData lock_count_data_;  // This may contain GC roots when lock counting is active.
+    private lock_count_data_: NativePointer = this.dex_instructions_.add(PointerSize)
     //   const uint32_t number_of_vregs_;
-    private number_of_vregs_: NativePointer = this.dex_instructions_.add(PointerSize)
+    private number_of_vregs_: NativePointer = this.lock_count_data_.add(PointerSize)
     //   uint32_t dex_pc_;
     private dex_pc_: NativePointer = this.number_of_vregs_.add(0x4)
     //   int16_t cached_hotness_countdown_;
@@ -58,19 +62,18 @@ export class ShadowFrame extends JSHandle {
 
     toString(): string {
         let disp: string = `ShadowFrame<${this.handle}>`
-        seeHexA(this.handle)
         if (this.handle.isNull()) return disp
         disp += `\n\t link_: ${this.link_}`
         disp += `\n\t method_: ${this.method_} -> ${this.method.PrettyMethod()}`
         disp += `\n\t result_register: ${this.result_register}`
         disp += `\n\t dex_pc_ptr: ${this.dex_pc_ptr}`
         disp += `\n\t dex_instructions: ${this.dex_instructions.toString().split('\n').map((item, index) => index == 0 ? item : `\n\t${item}`).join('')}`
-        disp += `\n\t number_of_vregs: ${this.number_of_vregs}`
+        disp += `\n\t number_of_vregs: ${this.NumberOfVRegs}`
         disp += `\n\t dex_pc: ${this.dex_pc}`
         disp += `\n\t cached_hotness_countdown: ${this.cached_hotness_countdown}`
         disp += `\n\t hotness_countdown: ${this.hotness_countdown}`
         disp += `\n\t frame_flags: ${this.frame_flags}`
-        // disp += `\n\t vregs: ${this.vregs}`
+        disp += `\n\t vregs_: ${this.vregs_}`
         return disp
     }
 
@@ -94,7 +97,11 @@ export class ShadowFrame extends JSHandle {
         return new ArtInstruction(this.dex_instructions_.readPointer())
     }
 
-    get number_of_vregs(): uint32_t {
+    get lock_count_data(): LockCountData {
+        return this.lock_count_data_.readPointer()
+    }
+
+    get NumberOfVRegs(): uint32_t {
         return this.number_of_vregs_.readU32()
     }
 
@@ -122,20 +129,75 @@ export class ShadowFrame extends JSHandle {
         this.dex_pc_ptr_.writePointer(dex_pc_ptr_)
     }
 
+    get DexInstructions(): CodeItemInstructionAccessor {
+        return CodeItemInstructionAccessor.fromDexFile(this.method.GetDexFile(), this.dex_instructions_)
+    }
+
     get vregs(): uint32_t[] {
         const vregs = []
-        for (let i = 0; i < this.number_of_vregs; i++) {
-            vregs.push(this.vregs_.add(i * 4).readU32())
+        for (let i = 0; i < this.NumberOfVRegs; i++) {
+            vregs.push(this.vregs_.add(i * 4).readInt())
         }
         return vregs
     }
 
-    get vreg_refs(): NativePointer[] {
-        const vreg_refs = []
-        for (let i = 0; i < this.number_of_vregs; i++) {
-            vreg_refs.push(this.vregs_.add(this.number_of_vregs * 0x4 + i * PointerSize))
+    get vreg_refs(): ArtObject[] {
+        const vreg_refs: ArtObject[] = []
+        for (let i = 0; i < this.NumberOfVRegs; i++) {
+            vreg_refs.push(this.GetVRegReference(i))
         }
         return vreg_refs
+    }
+
+    // void SetVRegReference(size_t i, ObjPtr<mirror::Object> val)
+    public SetVRegReference(i: number, val: ArtObject): void {
+        this.vregs_.add(this.NumberOfVRegs * 0x4 + i * PointerSize).writePointer(val.handle)
+    }
+
+    //  mirror::Object* GetVRegReference(size_t i) 
+    public GetVRegReference(i: number): ArtObject {
+        let ref: NativePointer = new ObjectReference(this.vregs_.add(this.NumberOfVRegs * 0x4 + i * ObjectReference.SizeOfClass)).reference
+        return new ArtObject(ref)
+    }
+
+    // int32_t GetVReg(size_t i) const
+    public GetVReg(i: number): uint32_t {
+        return this.vregs_.add(i * 4).readU32()
+    }
+
+    // void SetVReg(size_t i, int32_t val)
+    public SetVReg(i: number, val: uint32_t): void {
+        this.vregs_.add(i * 4).writeU32(val)
+    }
+
+    // float GetVRegFloat(size_t i) const
+    public GetVRegFloat(i: number): number {
+        return this.vregs_.add(i * 4).readFloat()
+    }
+
+    // void SetVRegFloat(size_t i, float val)
+    public SetVRegFloat(i: number, val: number): void {
+        this.vregs_.add(i * 4).writeFloat(val)
+    }
+
+    // int64_t GetVRegLong(size_t i) const
+    public GetVRegLong(i: number): Int64 {
+        return this.vregs_.add(i * 4).readS64()
+    }
+
+    // void SetVRegLong(size_t i, int64_t val)
+    public SetVRegLong(i: number, val: Int64): void {
+        this.vregs_.add(i * 4).writeS64(val)
+    }
+
+    // double GetVRegDouble(size_t i) const 
+    public GetVRegDouble(i: number): number {
+        return this.vregs_.add(i * 4).readDouble()
+    }
+
+    // void SetVRegDouble(size_t i, double val)
+    public SetVRegDouble(i: number, val: number): void {
+        this.vregs_.add(i * 4).writeDouble(val)
     }
 
     // _ZNK3art11Instruction28SizeInCodeUnitsComplexOpcodeEv
@@ -220,7 +282,10 @@ export class ShadowFrame extends JSHandle {
             const dexfile = thisMethod.GetDexFile()
             let artInstruction = sf.dex_pc_ptr.isNull() ? thisMethod.DexInstructions().InstructionAt() : new ArtInstruction(sf.dex_pc_ptr)
             let counter: number = smaliLines
-            let disp_smali: string = ""
+            const ins_size: number = thisMethod.DexInstructions().CodeItem.ins_size
+            let disp_smali: string = ''
+            disp_smali += '\t' + sf.vregs.map((vreg, index) => index < ins_size ? `p${index}=${vreg}` : `v${index}=${vreg}`).join(', ') + '\n'
+            disp_smali += '\t' + sf.vreg_refs.map((vreg, index) => sf.vregs[index] != 0 ? (index < ins_size ? `p${index}=${vreg.simpleDisp()}` : `v${index}=${vreg.simpleDisp()}`) : "null").join('\n\t') + '\n'
             while (--counter >= 0 && artInstruction.Next().SizeInCodeUnits > 0) {
                 const offset: NativePointer = artInstruction.handle.sub(thisMethod.DexInstructions().insns)
                 disp_smali += `\t${artInstruction.handle} ${offset} -> ${artInstruction.dumpString(dexfile)}\n`
@@ -231,3 +296,5 @@ export class ShadowFrame extends JSHandle {
     }
 
 }
+
+globalThis.ShadowFrame = ShadowFrame

@@ -18,30 +18,30 @@ export class StackVisitor extends JSHandle {
 
     // public:
     // Thread* const thread_;
-    thread_: NativePointer = this.CurrentHandle
+    private thread_: NativePointer = this.CurrentHandle
     // const StackWalkKind walk_kind_;
-    walk_kind_: NativePointer = this.thread_.add(PointerSize)
+    private walk_kind_: NativePointer = this.thread_.add(PointerSize)
     // ShadowFrame* cur_shadow_frame_;
-    cur_shadow_frame_: NativePointer = this.walk_kind_.add(PointerSize)
+    private cur_shadow_frame_: NativePointer = this.walk_kind_.add(PointerSize)
     // ArtMethod** cur_quick_frame_;
-    cur_quick_frame_: NativePointer = this.cur_shadow_frame_.add(PointerSize)
+    private cur_quick_frame_: NativePointer = this.cur_shadow_frame_.add(PointerSize)
     // uintptr_t cur_quick_frame_pc_;
-    cur_quick_frame_pc_: NativePointer = this.cur_quick_frame_.add(PointerSize)
+    private cur_quick_frame_pc_: NativePointer = this.cur_quick_frame_.add(PointerSize)
     // const OatQuickMethodHeader* cur_oat_quick_method_header_;
-    cur_oat_quick_method_header_: NativePointer = this.cur_quick_frame_pc_.add(PointerSize)
+    private cur_oat_quick_method_header_: NativePointer = this.cur_quick_frame_pc_.add(PointerSize)
     // // Lazily computed, number of frames in the stack.
     // size_t num_frames_;
-    num_frames_: NativePointer = this.cur_oat_quick_method_header_.add(PointerSize)
+    private num_frames_: NativePointer = this.cur_oat_quick_method_header_.add(PointerSize)
     // // Lazily computed, depth of the deepest stack frame.
     // // Depth of the frame we're currently at.
     // size_t cur_depth_;
-    cur_depth_: NativePointer = this.num_frames_.add(PointerSize)
+    private cur_depth_: NativePointer = this.num_frames_.add(PointerSize)
     // // Current inlined frames of the method we are currently at.
     // // We keep poping frames from the end as we visit the frames.
     // CodeInfo current_code_info_;
-    current_code_info_: NativePointer = this.cur_depth_.add(PointerSize)
+    private current_code_info_: NativePointer = this.cur_depth_.add(PointerSize)
     // BitTableRange<InlineInfo> current_inline_frames_;
-    current_inline_frames_: NativePointer = this.current_code_info_.add(PointerSize)
+    private current_inline_frames_: NativePointer = this.current_code_info_.add(PointerSize)
 
     // protected:
     // Context* const context_;

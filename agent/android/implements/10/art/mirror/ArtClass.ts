@@ -11,38 +11,38 @@ export class ArtClass extends ArtObject implements SizeOfClass {
     isVirtualClass: boolean = false
 
     // HeapReference<ClassLoader> class_loader_;
-    class_loader_ = this.CurrentHandle
+    private class_loader_ = this.CurrentHandle
     // HeapReference<Class> component_type_;
-    component_type_ = this.class_loader_.add(HeapReference.Size)
+    private component_type_ = this.class_loader_.add(HeapReference.Size)
     // HeapReference<DexCache> dex_cache_;
-    dex_cache_ = this.component_type_.add(HeapReference.Size)
+    private dex_cache_ = this.component_type_.add(HeapReference.Size)
     // HeapReference<ClassExt> ext_data_;
-    ext_data_ = this.dex_cache_.add(HeapReference.Size)
+    private ext_data_ = this.dex_cache_.add(HeapReference.Size)
     // HeapReference<IfTable> iftable_;
-    iftable_ = this.ext_data_.add(HeapReference.Size)
+    private iftable_ = this.ext_data_.add(HeapReference.Size)
     // HeapReference<String> name_;
-    name_ = this.iftable_.add(HeapReference.Size)
+    private name_ = this.iftable_.add(HeapReference.Size)
     // HeapReference<Class> super_class_;
-    super_class_ = this.name_.add(HeapReference.Size)
+    private super_class_ = this.name_.add(HeapReference.Size)
     // HeapReference<PointerArray> vtable_;
-    vtable_ = this.super_class_.add(HeapReference.Size)
+    private vtable_ = this.super_class_.add(HeapReference.Size)
     // ArtFields are allocated as a length prefixed ArtField array, and not an array of pointers to ArtFields.
     // uint64_t ifields_; => instance fields
-    ifields_ = this.vtable_.add(HeapReference.Size)
+    private ifields_ = this.vtable_.add(HeapReference.Size)
     // uint64_t methods_;
-    methods_ = this.ifields_.add(0x8)
+    private methods_ = this.ifields_.add(0x8)
     // uint64_t sfields_;
-    sfields_ = this.methods_.add(0x8)
+    private sfields_ = this.methods_.add(0x8)
     // uint32_t access_flags_;
-    access_flags_ = this.sfields_.add(0x8)
+    private access_flags_ = this.sfields_.add(0x8)
     // uint32_t class_flags_;
-    class_flags_ = this.access_flags_.add(0x4)
+    private class_flags_ = this.access_flags_.add(0x4)
     // uint32_t class_size_;
-    class_size_ = this.class_flags_.add(0x4)
+    private class_size_ = this.class_flags_.add(0x4)
     // pid_t clinit_thread_id_;
-    clinit_thread_id_ = this.class_size_.add(0x4)
+    private clinit_thread_id_ = this.class_size_.add(0x4)
     // int32_t dex_class_def_idx_;
-    dex_class_def_idx_ = this.clinit_thread_id_.add(0x8)
+    private dex_class_def_idx_ = this.clinit_thread_id_.add(0x8)
 
     constructor(handle: NativePointer) {
         super(handle)

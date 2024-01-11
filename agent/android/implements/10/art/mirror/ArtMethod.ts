@@ -18,15 +18,15 @@ import { GcRoot } from "../GcRoot"
 export class ArtMethod extends JSHandle implements IArtMethod, SizeOfClass {
 
     // GcRoot<mirror::Class> declaring_class_; 
-    declaring_class_: NativePointer = this.CurrentHandle // 0x4
+    private declaring_class_: NativePointer = this.CurrentHandle // 0x4
     // std::atomic<std::uint32_t> access_flags_;
-    access_flags_: NativePointer = this.declaring_class_.add(GcRoot.Size)   // 0x4
+    private access_flags_: NativePointer = this.declaring_class_.add(GcRoot.Size)   // 0x4
     // uint32_t dex_code_item_offset_;
-    dex_code_item_offset_: NativePointer = this.access_flags_.add(0x4) // 0x4
+    private dex_code_item_offset_: NativePointer = this.access_flags_.add(0x4) // 0x4
     // uint32_t dex_method_index_;
-    dex_method_index_: NativePointer = this.dex_code_item_offset_.add(0x4) // 0x4
+    private dex_method_index_: NativePointer = this.dex_code_item_offset_.add(0x4) // 0x4
     // uint16_t method_index_;
-    method_index_: NativePointer = this.dex_method_index_.add(0x4) // 0x2
+    private method_index_: NativePointer = this.dex_method_index_.add(0x4) // 0x2
 
     //   union {
     //     // Non-abstract methods: The hotness we measure for this method. Not atomic,
@@ -36,8 +36,8 @@ export class ArtMethod extends JSHandle implements IArtMethod, SizeOfClass {
     //     // The negation is needed to distinguish zero index and missing cached entry.
     //     uint16_t imt_index_;
     //   };
-    hotness_count_: NativePointer = this.CurrentHandle.add(GcRoot.Size + 0x4 * 3 + 0x2 * 1)
-    imt_index_: NativePointer = this.CurrentHandle.add(GcRoot.Size + 0x4 * 3 + 0x2 * 1)
+    private hotness_count_: NativePointer = this.CurrentHandle.add(GcRoot.Size + 0x4 * 3 + 0x2 * 1)
+    private imt_index_: NativePointer = this.CurrentHandle.add(GcRoot.Size + 0x4 * 3 + 0x2 * 1)
 
     // Must be the last fields in the method.
     //   struct PtrSizedFields {
@@ -55,7 +55,7 @@ export class ArtMethod extends JSHandle implements IArtMethod, SizeOfClass {
     //     void* entry_point_from_quick_compiled_code_;
     //   } ptr_sized_fields_;
 
-    ptr_sized_fields_: {
+    public ptr_sized_fields_: {
         data_: NativePointer
         entry_point_from_quick_compiled_code_: NativePointer
     }

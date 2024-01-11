@@ -4,9 +4,9 @@ import { PointerSize } from "../Globals"
 export class CodeItemDebugInfoAccessor extends CodeItemDataAccessor implements SizeOfClass {
 
     // const DexFile* dex_file_ = nullptr;
-    dex_file_ = this.CurrentHandle.add(0x0)
+    protected dex_file_ = this.CurrentHandle.add(0x0)
     // uint32_t debug_info_offset_ = 0u;
-    debug_info_offset_ = this.CurrentHandle.add(PointerSize)
+    protected debug_info_offset_ = this.CurrentHandle.add(PointerSize)
 
     constructor(insns_size_in_code_units: number, insns: NativePointer, registers_size?: number, ins_size?: number, outs_size?: number, tries_size?: number, dex_file: NativePointer = NULL, debug_info_offset: number = 0) {
         super(insns_size_in_code_units, insns, registers_size, ins_size, outs_size, tries_size)

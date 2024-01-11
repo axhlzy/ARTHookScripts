@@ -22,14 +22,14 @@ export class OatQuickMethodHeader extends JSHandle {
 
     // // The offset in bytes from the start of the vmap table to the end of the header.
     // uint32_t vmap_table_offset_ = 0u;
-    vmap_table_offset_ = this.handle.add(0)
+    private vmap_table_offset_ = this.handle.add(0)
     // // The code size in bytes. The highest bit is used to signify if the compiled
     // // code with the method header has should_deoptimize flag.
     // uint32_t code_size_ = 0u;
-    code_size_ = this.handle.add(4)
+    private code_size_ = this.handle.add(4)
     // // The actual code.
     // uint8_t code_[0];
-    code_ = this.handle.add(8)
+    private code_ = this.handle.add(8)
 
     constructor(handle: NativePointer) {
         super(handle)

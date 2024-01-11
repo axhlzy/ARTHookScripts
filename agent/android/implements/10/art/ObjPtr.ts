@@ -20,3 +20,21 @@ export class ObjPtr extends JSHandle {
     }
 
 }
+
+export class ObjectReference extends JSHandle {
+
+    // The encoded reference to a mirror::Object.
+    //   uint32_t reference_;
+    private reference_: NativePointer = this.handle
+
+    public static SizeOfClass: number = 0x4
+
+    constructor(handle: NativePointer) {
+        super(handle)
+    }
+
+    get reference(): NativePointer {
+        return ptr(this.reference_.readU32())
+    }
+
+}

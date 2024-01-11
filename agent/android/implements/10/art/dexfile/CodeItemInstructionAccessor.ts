@@ -1,9 +1,9 @@
 import { StandardDexFile_CodeItem } from "./StandardDexFile"
 import { CompactDexFile_CodeItem } from "./CompactDexFile"
-import { PointerSize } from "../Globals"
 import { JSHandle } from "../../../../JSHandle"
 import { ArtMethod } from "../mirror/ArtMethod"
 import { ArtInstruction } from "../Instruction"
+import { PointerSize } from "../Globals"
 import { DexFile } from "./DexFile"
 
 export class CodeItemInstructionAccessor extends JSHandle implements SizeOfClass {
@@ -16,11 +16,11 @@ export class CodeItemInstructionAccessor extends JSHandle implements SizeOfClass
 
     // size of the insns array, in 2 byte code units. 0 if there is no code item.
     //   uint32_t insns_size_in_code_units_ = 0;
-    insns_size_in_code_units_ = this.CurrentHandle
+    private insns_size_in_code_units_ = this.CurrentHandle
 
     // Pointer to the instructions, null if there is no code item.
     // const uint16_t* insns_ = nullptr;
-    insns_ = this.CurrentHandle.add(0x4) // ref ptr
+    private insns_ = this.CurrentHandle.add(0x4) // ref ptr
 
     constructor(insns_size_in_code_units: number = 0, insns: NativePointer = NULL) {
         if (typeof insns_size_in_code_units == "number" && insns_size_in_code_units == 0 && insns.isNull()) {
