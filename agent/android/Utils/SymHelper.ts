@@ -4,15 +4,11 @@ import { JSHandle } from "../JSHandle"
 
 const DEBUG_LOG: boolean = false
 
-declare global {
-    function callSym<T>(sym: string, md: string, retType: NativeType, argTypes: NativeType[], ...args: any[]): T
-    function getSym(symName: string, md: string, check?: boolean): NativePointer | null
-}
-
 function CallSymLocal<T>(address: NativePointer, retType: NativeType, argTypes: NativeType[], ...args: any[]): T {
     try {
         return new NativeFunction(address, retType, argTypes)(...args) as T
     } catch (error: any) {
+        throw error
         LOGE(`CallSymLocal exception 👇 \n${error.stack}`)
         return null
     }
@@ -87,6 +83,11 @@ export function getSym(symName: string, md: string, checkNotFunction: boolean = 
     Cache.set(symName, address)
     return address
 }
+
+// declare global {
+//     function callSym<T>(sym: string, md: string, retType: NativeType, argTypes: NativeType[], ...args: any[]): T
+//     function getSym(symName: string, md: string, check?: boolean): NativePointer | null
+// }
 
 globalThis.callSym = callSym
 globalThis.getSym = getSym

@@ -1,6 +1,7 @@
 import { HeapReference } from "./Interface/art/mirror/HeapReference"
 import { ArtThread } from "./implements/10/art/Thread"
 import { StdString } from "../tools/StdString"
+import { callSym } from "./Utils/SymHelper"
 import { JSHandle } from "./JSHandle"
 
 class ArtField extends JSHandle { }

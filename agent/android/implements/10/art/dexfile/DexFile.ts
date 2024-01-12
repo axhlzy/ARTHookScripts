@@ -4,12 +4,13 @@ import {
     DexCallSiteIdItem, DexClassDef, DexFieldAnnotationsItem, DexFieldId, DexMethodHandleItem, DexMethodId,
     DexProtoId, DexStringId, DexTryItem, DexTypeId, DexTypeList, LEB128String
 } from "./DexFileStructs"
+import { CompactDexHeader, DexHeader, StandardDexHeader } from "./Header"
 import { StdString } from "../../../../../tools/StdString"
 import { DexStringIndex, DexTypeIndex } from "./DexIndex"
+import { callSym } from "../../../../Utils/SymHelper"
 import { JSHandle } from "../../../../JSHandle"
 import { OatDexFile } from "../Oat/OatDexFile"
 import { PointerSize } from "../Globals"
-import { CompactDexHeader, DexHeader, StandardDexHeader } from "./Header"
 
 // virtual class DexFile;
 export class DexFile extends JSHandle {
@@ -419,28 +420,43 @@ export class DexFile extends JSHandle {
     // _ZNK3art7DexFile10IsReadOnlyEv
     // bool IsReadOnly() const;
     IsReadOnly(): boolean {
-        return callSym<boolean>(
+        if (this.is_compact_dex) {
+            LOGE("EnableWrite() not supported for compact dex files")
+            return false
+        }
+        let ret: boolean = !callSym<NativePointer>(
             "_ZNK3art7DexFile10IsReadOnlyEv", "libdexfile.so",
-            "bool", ["pointer"],
-            this.handle)
+            "pointer", ["pointer"],
+            this.handle).isNull()
+        return ret
     }
 
     // _ZNK3art7DexFile12DisableWriteEv
     // bool DisableWrite() const;
     DisableWrite(): boolean {
-        return callSym<boolean>(
+        if (this.is_compact_dex) {
+            LOGE("EnableWrite() not supported for compact dex files")
+            return false
+        }
+        let ret: boolean = !callSym<NativePointer>(
             "_ZNK3art7DexFile12DisableWriteEv", "libdexfile.so",
-            "bool", ["pointer"],
-            this.handle)
+            "pointer", ["pointer"],
+            this.handle).isNull()
+        return ret
     }
 
     // _ZNK3art7DexFile11EnableWriteEv
     // bool EnableWrite() const;
     EnableWrite(): boolean {
-        return callSym<boolean>(
+        if (this.is_compact_dex) {
+            LOGE("EnableWrite() not supported for compact dex files")
+            return false
+        }
+        let ret: boolean = !callSym<NativePointer>(
             "_ZNK3art7DexFile11EnableWriteEv", "libdexfile.so",
-            "bool", ["pointer"],
-            this.handle)
+            "pointer", ["pointer"],
+            this.handle).isNull()
+        return ret
     }
 
     // _ZNK3art7DexFile10PrettyTypeENS_3dex9TypeIndexE

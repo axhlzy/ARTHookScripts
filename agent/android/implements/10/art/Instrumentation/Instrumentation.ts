@@ -1,5 +1,9 @@
+import { InstrumentationEvent, InstrumentationListener, InstrumentationListenerInterface } from "./InstrumentationListener"
+import { getArtRuntimeSpec } from "../../../../android"
+import { callSym } from "../../../../Utils/SymHelper"
 import { JSHandle } from "../../../../JSHandle"
-import { PointerSize } from "../Globals"
+
+type InstrumentationLevelTable = NativePointer
 
 export class Instrumentation extends JSHandle {
 
@@ -120,34 +124,117 @@ export class Instrumentation extends JSHandle {
     //   // TODO Figure out a way to remove the need for this.
     //   bool can_use_instrumentation_trampolines_;
 
-    constructor(handle: NativePointer) {
+    private constructor(handle: NativePointer) {
         super(handle)
+    }
+
+    public static get Instance(): Instrumentation {
+        const handle_ref: NativePointer = ((Java as any).api.artRuntime as NativePointer).add(getArtRuntimeSpec().offset.instrumentation)
+        return new Instrumentation(handle_ref)
     }
 
     toString(): string {
         let disp: string = `Instrumentation< ${this.handle} >`
         if (this.handle.isNull()) return disp
-        // disp += `\n${this.instrumentation_stubs_installed}`
-        // disp += `\n${this.entry_exit_stubs_installed}`
-        // disp += `\n${this.interpreter_stubs_installed}`
-        // disp += `\n${this.interpret_only}`
-        // disp += `\n${this.forced_interpret_only}`
-        // disp += `\n${this.have_method_entry_listeners}`
-        // disp += `\n${this.have_method_exit_listeners}`
-        // disp += `\n${this.have_method_unwind_listeners}`
-        // disp += `\n${this.have_dex_pc_listeners}`
-        // disp += `\n${this.have_field_read_listeners}`
-        // disp += `\n${this.have_field_write_listeners}`
-        // disp += `\n${this.have_exception_thrown_listeners}`
-        // disp += `\n${this.have_watched_frame_pop_listeners}`
-        // disp += `\n${this.have_branch_listeners}`
-        // disp += `\n${this.have_exception_handled_listeners}`
-        // disp += `\n${this.requested_instrumentation_levels}`
+        disp += `\n\t instrumentation_stubs_installed=${this.instrumentation_stubs_installed}`
+        disp += `\n\t entry_exit_stubs_installed=${this.entry_exit_stubs_installed}`
+        disp += `\n\t interpreter_stubs_installed=${this.interpreter_stubs_installed}`
+        disp += `\n\t interpret_only=${this.interpret_only}`
+        disp += `\n\t forced_interpret_only=${this.forced_interpret_only}`
+        disp += `\n\t have_method_entry_listeners=${this.have_method_entry_listeners}`
+        disp += `\n\t have_method_exit_listeners=${this.have_method_exit_listeners}`
+        disp += `\n\t have_method_unwind_listeners=${this.have_method_unwind_listeners}`
+        disp += `\n\t have_dex_pc_listeners=${this.have_dex_pc_listeners}`
+        disp += `\n\t have_field_read_listeners=${this.have_field_read_listeners}`
+        disp += `\n\t have_field_write_listeners=${this.have_field_write_listeners}`
+        disp += `\n\t have_exception_thrown_listeners=${this.have_exception_thrown_listeners}`
+        disp += `\n\t have_watched_frame_pop_listeners=${this.have_watched_frame_pop_listeners}`
+        disp += `\n\t have_branch_listeners=${this.have_branch_listeners}`
+        disp += `\n\t have_exception_handled_listeners=${this.have_exception_handled_listeners}`
+        disp += `\n\t requested_instrumentation_levels=${this.requested_instrumentation_levels}`
         return disp
     }
 
-    get SizeOfClass(): number {
-        return super.SizeOfClass + (this.requested_instrumentation_levels_.add(PointerSize).sub(this.CurrentHandle).toInt32())
+    get instrumentation_stubs_installed(): boolean {
+        return this.instrumentation_stubs_installed_.readU8() == 1
+    }
+
+    get entry_exit_stubs_installed(): boolean {
+        return this.entry_exit_stubs_installed_.readU8() == 1
+    }
+
+    get interpreter_stubs_installed(): boolean {
+        return this.interpreter_stubs_installed_.readU8() == 1
+    }
+
+    get interpret_only(): boolean {
+        return this.interpret_only_.readU8() == 1
+    }
+
+    get forced_interpret_only(): boolean {
+        return this.forced_interpret_only_.readU8() == 1
+    }
+
+    get have_method_entry_listeners(): boolean {
+        return this.have_method_entry_listeners_.readU8() == 1
+    }
+
+    get have_method_exit_listeners(): boolean {
+        return this.have_method_exit_listeners_.readU8() == 1
+    }
+
+    get have_method_unwind_listeners(): boolean {
+        return this.have_method_unwind_listeners_.readU8() == 1
+    }
+
+    get have_dex_pc_listeners(): boolean {
+        return this.have_dex_pc_listeners_.readU8() == 1
+    }
+
+    get have_field_read_listeners(): boolean {
+        return this.have_field_read_listeners_.readU8() == 1
+    }
+
+    get have_field_write_listeners(): boolean {
+        return this.have_field_write_listeners_.readU8() == 1
+    }
+
+    get have_exception_thrown_listeners(): boolean {
+        return this.have_exception_thrown_listeners_.readU8() == 1
+    }
+
+    get have_watched_frame_pop_listeners(): boolean {
+        return this.have_watched_frame_pop_listeners_.readU8() == 1
+    }
+
+    get have_branch_listeners(): boolean {
+        return this.have_branch_listeners_.readU8() == 1
+    }
+
+    get have_exception_handled_listeners(): boolean {
+        return this.have_exception_handled_listeners_.readU8() == 1
+    }
+
+    // typedef SafeMap<const char*, InstrumentationLevel> InstrumentationLevelTable;
+    get requested_instrumentation_levels(): InstrumentationLevelTable {
+        return this.requested_instrumentation_levels_
+    }
+
+    public static ForceInterpretOnly(): void {
+        Instrumentation.Instance.interpret_only_.writeU8(1)
+        Instrumentation.Instance.forced_interpret_only_.writeU8(1)
+    }
+
+    // void Instrumentation::AddListener(InstrumentationListener* listener, uint32_t events) 
+    // art::instrumentation::Instrumentation::AddListener(art::instrumentation::InstrumentationListener*, unsigned int)
+    // _ZN3art15instrumentation15Instrumentation11AddListenerEPNS0_23InstrumentationListenerEj
+    public static AddListener(listener: InstrumentationListenerInterface, events: InstrumentationEvent): void {
+        callSym<void>("_ZN3art15instrumentation15Instrumentation11AddListenerEPNS0_23InstrumentationListenerEj", "libart.so",
+            'void',
+            ['pointer', 'pointer', 'int'],
+            Instrumentation.Instance.handle, new InstrumentationListener(listener).VirtualPtr, events)
     }
 
 }
+
+globalThis.Instrumentation = Instrumentation

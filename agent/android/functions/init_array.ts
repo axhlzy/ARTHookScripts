@@ -1,3 +1,5 @@
+import { callSym, getSym } from "../Utils/SymHelper"
+
 type size_t = NativePointer
 
 export class InitArray {

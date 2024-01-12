@@ -1,3 +1,4 @@
+import { callSym } from "../../../Utils/SymHelper"
 import { JSHandle } from "../../../JSHandle"
 import { PointerSize } from "./Globals"
 import { ObjPtr } from "./ObjPtr"

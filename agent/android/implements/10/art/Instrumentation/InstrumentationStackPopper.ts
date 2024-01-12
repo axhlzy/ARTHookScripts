@@ -1,3 +1,4 @@
+import { Instrumentation } from "./Instrumentation"
 import { JSHandle } from "../../../../JSHandle"
 import { PointerSize } from "../Globals"
 import { ArtThread } from "../Thread"
@@ -19,7 +20,6 @@ export class InstrumentationStackPopper extends JSHandle {
         let disp: string = `InstrumentationStackPopper< ${this.handle} >`
         if (this.handle.isNull()) return disp
         disp += `\n${this.self}`
-        disp += `\n${this.instrumentation}`
         disp += `\n${this.frames_to_remove}`
         return disp
     }
@@ -30,10 +30,6 @@ export class InstrumentationStackPopper extends JSHandle {
 
     get self(): ArtThread {
         return new ArtThread(this.self_.readPointer())
-    }
-
-    get instrumentation(): NativePointer {
-        return this.instrumentation_.readPointer()
     }
 
     get frames_to_remove(): number {

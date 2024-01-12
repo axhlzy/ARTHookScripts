@@ -4,6 +4,7 @@ import { IArtMethod } from "../../../../Interface/art/mirror/IArtMethod"
 import { StandardDexFile_CodeItem } from "../dexfile/StandardDexFile"
 import { CompactDexFile_CodeItem } from "../dexfile/CompactDexFile"
 import { OatQuickMethodHeader } from "../OatQuickMethodHeader"
+import { callSym, getSym } from "../../../../Utils/SymHelper"
 import { ArtModifiers } from "../../../../../tools/modifiers"
 import { StdString } from "../../../../../tools/StdString"
 import { InvokeType } from "../../../../../tools/enum"
@@ -11,7 +12,9 @@ import { JSHandle } from "../../../../JSHandle"
 import { ArtInstruction } from "../Instruction"
 import { DexFile } from "../dexfile/DexFile"
 import { PointerSize } from "../Globals"
+import { JValue } from "../Type/JValue"
 import { ArtClass } from "./ArtClass"
+import { ArtThread } from "../Thread"
 import { DexCache } from "./DexCache"
 import { GcRoot } from "../GcRoot"
 
@@ -160,6 +163,7 @@ export class ArtMethod extends JSHandle implements IArtMethod, SizeOfClass {
     // _ZN3art9ArtMethod12PrettyMethodEPS0_b => art::ArtMethod::PrettyMethod(art::ArtMethod*, bool)
     // _ZNK3art7DexFile12PrettyMethodEjb => art::DexFile::PrettyMethod(unsigned int, bool) const
     PrettyMethod(withSignature = true): string {
+        if (this.handle.isNull()) return 'NULL'
         const result = new StdString();
         (Java as any).api['art::ArtMethod::PrettyMethod'](result, this.handle, withSignature ? 1 : 0)
         return result.disposeToString()
@@ -325,6 +329,20 @@ export class ArtMethod extends JSHandle implements IArtMethod, SizeOfClass {
             "_ZN3art9ArtMethod23GetSingleImplementationENS_11PointerSizeE", "libart.so",
             'pointer', ['pointer', 'int'],
             this.handle, Process.pointerSize))
+        Java.perform(() => {
+            var jstr = Java.use("java.lang.String")
+            Java.use("com.bytedance.applog.util.i").a(jstr.$new("123"))
+        })
+    }
+
+    // void ArtMethod::Invoke(Thread* self, uint32_t* args, uint32_t args_size, JValue* result, const char* shorty) 
+    // art::ArtMethod::Invoke(art::Thread*, unsigned int*, unsigned int, art::JValue*, char const*)
+    // _ZN3art9ArtMethod6InvokeEPNS_6ThreadEPjjPNS_6JValueEPKc
+    Invoke(self: NativePointerValue, args: NativePointerValue[], result: JValue, shorty: string): void {
+        return callSym<void>(
+            "_ZN3art9ArtMethod6InvokeEPNS_6ThreadEPjjPNS_6JValueEPKc", "libart.so",
+            'void', ['pointer', 'pointer', 'pointer', 'pointer', 'pointer', 'pointer'],
+            this.handle, this.CurrentHandle, args, args.length, result.handle, Memory.allocUtf8String(shorty))
     }
 
     // ArtMethod* FindOverriddenMethod(PointerSize pointer_size)
@@ -531,3 +549,92 @@ export class ArtMethod extends JSHandle implements IArtMethod, SizeOfClass {
 }
 
 Reflect.set(globalThis, 'ArtMethod', ArtMethod)
+
+class ArtMethod_Ini extends ArtMethod {
+
+    static HookArtMethodInvoke() {
+
+        Interceptor.attach(getSym("_ZN3art9ArtMethod6InvokeEPNS_6ThreadEPjjPNS_6JValueEPKc", "libart.so"), new CModule(`
+
+        #include <stdio.h>
+        #include <glib.h>
+        #include <gum/gumprocess.h>
+        #include <gum/guminterceptor.h>
+
+        extern void _frida_log(const gchar * message);
+
+        static void frida_log(const char * format, ...) {
+            gchar * message;
+            va_list args;
+            va_start (args, format);
+            message = g_strdup_vprintf (format, args);
+            va_end (args);
+            _frida_log (message);
+            g_free (message);
+        }
+
+        extern void CalledArtMethod(void* artMethod);
+
+        void(*it)(void* dexFile);
+
+        extern GHashTable *ptrHash;
+
+        gboolean filterPtr(void* ptr) {
+            if (ptrHash == NULL) {
+                ptrHash = g_hash_table_new_full(g_direct_hash, g_direct_equal, NULL, NULL);
+            }
+
+            guint count = GPOINTER_TO_UINT(g_hash_table_lookup(ptrHash, ptr));
+
+            if (count >= 5) {
+                // frida_log("Filter PASS (Count >= 5) -> %p", ptr);
+                return FALSE;
+            } else {
+                g_hash_table_insert(ptrHash, ptr, GUINT_TO_POINTER(count + 1));
+                return TRUE;
+            }
+        }
+
+        void onEnter(GumInvocationContext *ctx) {
+            void* artMethod = gum_invocation_context_get_nth_argument(ctx, 0);
+            if (filterPtr(artMethod)) {
+                CalledArtMethod(artMethod);
+            }
+        }
+
+        `, {
+            ptrHash: Memory.alloc(Process.pointerSize),
+            _frida_log: new NativeCallback((message: NativePointer) => {
+                LOGZ(message.readCString())
+            }, 'void', ['pointer']),
+            CalledArtMethod: new NativeCallback((artMethod: NativePointer) => {
+                const method: ArtMethod = new ArtMethod(artMethod)
+                // if (method.methodName.includes("com.clash.zombie"))
+                LOGD(`Called -> ${method.methodName}`)
+            }, 'void', ['pointer'])
+
+        }) as NativeInvocationListenerCallbacks)
+
+        return
+
+        // void ArtMethod::Invoke(Thread* self, uint32_t* args, uint32_t args_size, JValue* result, const char* shorty)
+        Interceptor.attach(getSym("_ZN3art9ArtMethod6InvokeEPNS_6ThreadEPjjPNS_6JValueEPKc", "libart.so"), {
+            onEnter: function (args) {
+                const artMethod: ArtMethod = new ArtMethod(args[0])
+                const thread: ArtThread = new ArtThread(args[1])
+                // const args_: NativePointer = args[2]
+                // const args_size: number = args[3].readU32()
+                // const result: JValue = new JValue(args[4])
+                // const shorty: string = args[5].readCString()
+                LOGD(`ArtMethod::Invoke -> ${artMethod.methodName}`)
+            }
+        })
+    }
+
+}
+
+declare global {
+    var HookArtMethodInvoke: () => void
+}
+
+globalThis.HookArtMethodInvoke = ArtMethod_Ini.HookArtMethodInvoke

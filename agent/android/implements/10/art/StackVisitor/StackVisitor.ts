@@ -1,6 +1,7 @@
 import { QuickMethodFrameInfo } from "../QuickMethodFrameInfo"
 import { OatQuickMethodHeader } from "../OatQuickMethodHeader"
 import { StdString } from "../../../../../tools/StdString"
+import { callSym } from "../../../../Utils/SymHelper"
 import { ArtMethod } from "../mirror/ArtMethod"
 import { JSHandle } from "../../../../JSHandle"
 import { ArtObject } from "../../../../Object"

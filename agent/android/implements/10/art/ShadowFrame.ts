@@ -1,11 +1,12 @@
+import { CodeItemInstructionAccessor } from "./dexfile/CodeItemInstructionAccessor"
+import { callSym } from "../../../Utils/SymHelper"
 import { ArtInstruction } from "./Instruction"
 import { ArtMethod } from "./mirror/ArtMethod"
 import { JSHandle } from "../../../JSHandle"
 import { ArtObject } from "../../../Object"
+import { ObjectReference } from "./ObjPtr"
 import { PointerSize } from "./Globals"
 import { JValue } from "./Type/JValue"
-import { CodeItemInstructionAccessor } from "./dexfile/CodeItemInstructionAccessor"
-import { ObjectReference } from "./ObjPtr"
 
 // jetbrains://clion/navigate/reference?project=libart&path=interpreter/shadow_frame.h
 
@@ -69,7 +70,7 @@ export class ShadowFrame extends JSHandle {
         disp += `\n\t dex_pc_ptr: ${this.dex_pc_ptr}`
         disp += `\n\t dex_instructions: ${this.dex_instructions.toString().split('\n').map((item, index) => index == 0 ? item : `\n\t${item}`).join('')}`
         disp += `\n\t number_of_vregs: ${this.NumberOfVRegs}`
-        disp += `\n\t dex_pc: ${this.dex_pc}`
+        disp += `\n\t dex_pc: ${this.dex_pc} | GetDexPC: ${this.GetDexPC()}`
         disp += `\n\t cached_hotness_countdown: ${this.cached_hotness_countdown}`
         disp += `\n\t hotness_countdown: ${this.hotness_countdown}`
         disp += `\n\t frame_flags: ${this.frame_flags}`
@@ -81,8 +82,13 @@ export class ShadowFrame extends JSHandle {
         return new ShadowFrame(this.link_.readPointer())
     }
 
-    get method(): ArtMethod {
-        return new ArtMethod(this.method_.readPointer())
+    get method(): ArtMethod | null {
+        if (this.method_.isNull()) return null
+        try {
+            return new ArtMethod(this.method_.readPointer())
+        } catch (error) {
+            return null
+        }
     }
 
     get result_register(): JValue {

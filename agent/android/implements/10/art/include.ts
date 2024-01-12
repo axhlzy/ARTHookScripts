@@ -6,6 +6,7 @@ import './OatQuickMethodHeader'
 import './QuickMethodFrameInfo'
 import './ObjPtr'
 import './Thread'
+import './Thread_Ini'
 import './ShadowFrame'
 
 import './dexfile/include'

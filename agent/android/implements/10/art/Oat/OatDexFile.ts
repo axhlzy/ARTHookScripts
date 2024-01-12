@@ -1,5 +1,6 @@
 import { StdString } from "../../../../../tools/StdString"
 import { JSHandle } from "../../../../JSHandle"
+import { callSym, getSym } from "../../../../Utils/SymHelper"
 import { PointerSize } from "../Globals"
 import { OatFile } from "./OatFile"
 
@@ -114,4 +115,101 @@ export class OatDexFile extends JSHandle {
         return this.dex_layout_sections_.readPointer()
     }
 
+    // static OatFile* OpenWithElfFile(int zip_fd, ElfFile* elf_file, VdexFile* vdex_file, const std::string& location, const char* abs_dex_location, td::string* error_msg);
+    // _ZN3art7OatFile15OpenWithElfFileEiPNS_7ElfFileEPNS_8VdexFileERKNSt3__112basic_stringIcNS5_11char_traitsIcEENS5_9allocatorIcEEEEPKcPSB_
+    static OpenWithElfFile(zip_fd: number, elf_file: NativePointer, vdex_file: NativePointer, location: string, abs_dex_location: string): OatFile {
+        return callSym<OatFile>(
+            "_ZN3art7OatFile15OpenWithElfFileEiPNS_7ElfFileEPNS_8VdexFileERKNSt3__112basic_stringIcNS5_11char_traitsIcEENS5_9allocatorIcEEEEPKcPSB_", "libart.so",
+            "pointer", ["int", "pointer", "pointer", "pointer", "pointer"],
+            zip_fd, elf_file, vdex_file, location, abs_dex_location)
+    }
+
+    // static OatFile* Open(int zip_fd, const std::string& filename, const std::string& location, bool executable, bool low_4gb, const char* abs_dex_location, /*inout*/MemMap* reservation,  // Where to load if not null. /*out*/std::string* error_msg);
+    // _ZN3art7OatFile4OpenEiRKNSt3__112basic_stringIcNS1_11char_traitsIcEENS1_9allocatorIcEEEES9_bbPKcPNS_6MemMapEPS7_
+    static Open(zip_fd: number, filename: string, location: string, executable: boolean, low_4gb: boolean, abs_dex_location: string, reservation: NativePointer): OatFile {
+        return callSym<OatFile>(
+            "_ZN3art7OatFile4OpenEiRKNSt3__112basic_stringIcNS1_11char_traitsIcEENS1_9allocatorIcEEEES9_bbPKcPNS_6MemMapEPS7_", "libart.so",
+            "pointer", ["int", "pointer", "pointer", "bool", "bool", "pointer", "pointer"],
+            zip_fd, filename, location, executable, low_4gb, abs_dex_location, reservation)
+    }
+
+    // static OatFile* Open(int zip_fd, int vdex_fd, int oat_fd, const std::string& oat_location, bool executable, bool low_4gb, const char* abs_dex_location, /*inout*/MemMap* reservation,  // Where to load if not null. /*out*/std::string* error_msg);
+    // _ZN3art7OatFile4OpenEiiiRKNSt3__112basic_stringIcNS1_11char_traitsIcEENS1_9allocatorIcEEEEbbPKcPNS_6MemMapEPS7_
+    static Open2(zip_fd: number, vdex_fd: number, oat_fd: number, oat_location: string, executable: boolean, low_4gb: boolean, abs_dex_location: string, reservation: NativePointer): OatFile {
+        return callSym<OatFile>(
+            "_ZN3art7OatFile4OpenEiiiRKNSt3__112basic_stringIcNS1_11char_traitsIcEENS1_9allocatorIcEEEEbbPKcPNS_6MemMapEPS7_", "libart.so",
+            "pointer", ["int", "int", "int", "pointer", "bool", "bool", "pointer", "pointer"],
+            zip_fd, vdex_fd, oat_fd, oat_location, executable, low_4gb, abs_dex_location, reservation)
+    }
+
 }
+
+class OatDexFile_Ini extends OatDexFile {
+
+    static hookOpen_1() {
+        Interceptor.attach(getSym("_ZN3art7OatFile4OpenEiRKNSt3__112basic_stringIcNS1_11char_traitsIcEENS1_9allocatorIcEEEES9_bbPKcPNS_6MemMapEPS7_", "libart.so")!, {
+            onEnter: function (args) {
+                LOGD(`OatDexFile::Open(\n\tzip_fd=${args[0]}, \n\tfilename=${new StdString(args[1])}, \n\tlocation=${new StdString(args[2])}, \n\texecutable=${args[3]}, \n\tlow_4gb=${args[4]}, \n\tabs_dex_location=${new StdString(args[5])}, \n\treservation=${args[6]}`)
+            }
+        })
+    }
+
+    static hookOpen_2() {
+        Interceptor.attach(getSym("_ZN3art7OatFile4OpenEiiiRKNSt3__112basic_stringIcNS1_11char_traitsIcEENS1_9allocatorIcEEEEbbPKcPNS_6MemMapEPS7_", "libart.so")!, {
+            onEnter: function (args) {
+                LOGD(`OatDexFile::Open(\n\tzip_fd=${args[0]}, \n\tvdex_fd=${args[1]}, \n\toat_fd=${args[2]}, \n\toat_location=${new StdString(args[3])}, \n\texecutable=${args[4]}, \n\tlow_4gb=${args[5]}, \n\tabs_dex_location=${new StdString(args[6])}, \n\treservation=${args[7]}`)
+            }
+        })
+    }
+
+    static hookOpenWithElfFile() {
+        Interceptor.attach(getSym("_ZN3art7OatFile15OpenWithElfFileEiPNS_7ElfFileEPNS_8VdexFileERKNSt3__112basic_stringIcNS5_11char_traitsIcEENS5_9allocatorIcEEEEPKcPSB_", "libart.so")!, {
+            onEnter: function (args) {
+                LOGD(`OatDexFile::OpenWithElfFile(\n\tzip_fd=${args[0]}, \n\telf_file=${args[1]}, \n\tvdex_file=${args[2]}, \n\tlocation=${new StdString(args[3])}, \n\tabs_dex_location=${new StdString(args[4])})`)
+            }
+        })
+    }
+
+    static hookOpen_3() {
+        // OatFileBase* OatFileBase::OpenOatFile(int zip_fd, const std::string& vdex_filename, const std::string& elf_filename, const std::string& location,
+        //     bool writable,  bool executable, bool low_4gb, const char* abs_dex_location, /*inout*/MemMap* reservation, /*out*/std::string* error_msg) 
+        // _ZN3art11OatFileBase11OpenOatFileINS_10ElfOatFileEEEPS0_iiiRKNSt3__112basic_stringIcNS4_11char_traitsIcEENS4_9allocatorIcEEEESC_bbbPKcPNS_6MemMapEPSA_
+        Interceptor.attach(getSym("_ZN3art11OatFileBase11OpenOatFileINS_10ElfOatFileEEEPS0_iiiRKNSt3__112basic_stringIcNS4_11char_traitsIcEENS4_9allocatorIcEEEESC_bbbPKcPNS_6MemMapEPSA_", "libart.so")!, {
+            onEnter: function (args) {
+                LOGD(`OatDexFile::OpenOatFile(\n\tzip_fd=${args[0]}, \n\tvdex_filename=${new StdString(args[1])}, \n\telf_filename=${new StdString(args[2])}, \n\tlocation=${new StdString(args[3])}, \n\twritable=${args[4]}, \n\texecutable=${args[5]}, \n\tlow_4gb=${args[6]}, \n\tabs_dex_location=${new StdString(args[7])}, \n\treservation=${args[8]}`)
+            }
+        })
+    }
+
+    static hookOpen_4() {
+        // bool DlOpenOatFile::Load(const std::string& elf_filename, bool writable, bool executable, bool low_4gb, /*inout*/MemMap* reservation,  // Where to load if not null. /*out*/std::string* error_msg) 
+        // _ZN3art13DlOpenOatFile4LoadERKNSt3__112basic_stringIcNS1_11char_traitsIcEENS1_9allocatorIcEEEEbbbPNS_6MemMapEPS7_
+        Interceptor.attach(getSym("_ZN3art13DlOpenOatFile4LoadERKNSt3__112basic_stringIcNS1_11char_traitsIcEENS1_9allocatorIcEEEEbbbPNS_6MemMapEPS7_", "libart.so")!, {
+            onEnter: function (args) {
+                LOGD(`DlOpenOatFile::Load(\n\telf_filename=${new StdString(args[1])}, \n\twritable=${args[2]}, \n\texecutable=${args[3]}, \n\tlow_4gb=${args[4]}, \n\treservation=${args[5]}`)
+                args[2] = ptr(1)
+            }
+        })
+    }
+
+    static hookOpen_5() {
+        // bool DlOpenOatFile::Load(const std::string& elf_filename, bool writable, bool executable, bool low_4gb, /*inout*/MemMap* reservation,  // Where to load if not null. /*out*/std::string* error_msg)
+        // _ZN3art10ElfOatFile4LoadEibbbPNS_6MemMapEPNSt3__112basic_stringIcNS3_11char_traitsIcEENS3_9allocatorIcEEEE
+        Interceptor.attach(getSym("_ZN3art10ElfOatFile4LoadEibbbPNS_6MemMapEPNSt3__112basic_stringIcNS3_11char_traitsIcEENS3_9allocatorIcEEEE", "libart.so")!, {
+            onEnter: function (args) {
+                LOGD(`OatDexFile::Load(\n\telf_filename=${new StdString(args[1])}, \n\twritable=${args[2]}, \n\texecutable=${args[3]}, \n\tlow_4gb=${args[4]}, \n\treservation=${args[5]}`)
+                args[2] = ptr(1)
+            }
+        })
+    }
+
+}
+
+// setImmediate(() => {
+//     // OatDexFile_Ini.hookOpen_1()
+//     // OatDexFile_Ini.hookOpen_2()
+//     // OatDexFile_Ini.hookOpenWithElfFile()
+//     // OatDexFile_Ini.hookOpen_3()
+//     OatDexFile_Ini.hookOpen_4()
+//     OatDexFile_Ini.hookOpen_5()
+// })

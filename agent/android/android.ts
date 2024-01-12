@@ -199,7 +199,17 @@ function tryDetectInstrumentationOffset(api) {
     return parseInstructionsAt(impl, instrumentationOffsetParsers[Process.arch], { limit: 30 })
 }
 
-function getArtRuntimeSpec(api) {
+export function getArtRuntimeSpec(api = (Java as any).api): {
+    offset: {
+        heap: NativePointer,
+        threadList: NativePointer,
+        internTable: NativePointer,
+        classLinker: NativePointer,
+        jniIdManager: NativePointer,
+        instrumentation: NativePointer,
+        jniIdsIndirection: NativePointer
+    }
+} {
     /*
      * class Runtime {
      * ...
@@ -483,5 +493,6 @@ globalThis.getArtMethodSpec = getArtMethodSpec
 globalThis.getAndroidSystemProperty = getAndroidSystemProperty
 globalThis.getAndroidApiLevel = getAndroidApiLevel
 globalThis.getAndroidCodename = getAndroidCodename
+globalThis.getArtRuntimeSpec = getArtRuntimeSpec
 
 globalThis.D = () => { Interceptor.detachAll() }

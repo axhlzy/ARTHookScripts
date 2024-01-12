@@ -15,6 +15,10 @@ export class HeapReference<T extends JSHandle | NativePointer | Object> extends 
         this._factory = factory
     }
 
+    public static fromRef<T extends JSHandle | NativePointer | Object>(factory: (handle: NativePointer) => T, ref: NativePointer): HeapReference<T> {
+        return new HeapReference(factory, ref)
+    }
+
     // mutable mirror::CompressedReference<mirror::Object> root_;
     get root(): T {
         return this._factory(this.handle) as T

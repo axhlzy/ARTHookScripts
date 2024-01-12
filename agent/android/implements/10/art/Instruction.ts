@@ -1,5 +1,6 @@
 import { StdString } from "../../../../tools/StdString"
 import { JSHandle } from "../../../JSHandle"
+import { callSym, getSym } from "../../../Utils/SymHelper"
 import { DexFile } from "./dexfile/DexFile"
 
 const DEBUG_LOG: boolean = false
@@ -135,6 +136,10 @@ export class ArtInstruction extends JSHandle {
     //   }
     Fetch16(offset: number = 0): number {
         return this.handle.add(offset).readU8()
+    }
+
+    get opcode(): number {
+        return this.Fetch16()
     }
 
 }
