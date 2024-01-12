@@ -6,6 +6,8 @@ export class ArtRuntime extends JSHandle {
         super(handle)
     }
 
-    // public static Instance: ArtRuntime = new ArtRuntime(((Java as any).api.artRuntime as NativePointer).readPointer())
+    public static getInstance() {
+        return new ArtRuntime(((Java as any).api.artRuntime as NativePointer))
+    }
 
 }

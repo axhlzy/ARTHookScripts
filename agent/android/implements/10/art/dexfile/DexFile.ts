@@ -12,6 +12,9 @@ import { JSHandle } from "../../../../JSHandle"
 import { OatDexFile } from "../Oat/OatDexFile"
 import { PointerSize } from "../Globals"
 
+// ref https://ctf-wiki.org/android/basic_operating_mechanism/java_layer/dex/dex/
+// ref https://juejin.cn/post/6844903847647772686#heading-4
+
 // virtual class DexFile;
 export class DexFile extends JSHandle {
 

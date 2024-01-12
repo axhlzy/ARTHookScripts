@@ -4,6 +4,8 @@ import { callSym, getSym } from "../../../../Utils/SymHelper"
 import { PointerSize } from "../Globals"
 import { OatFile } from "./OatFile"
 
+// ref https://evilpan.com/2021/12/26/art-internal/#oatfile
+
 export class OatDexFile extends JSHandle {
 
     //   const OatFile* const oat_file_ = nullptr;
@@ -144,7 +146,7 @@ export class OatDexFile extends JSHandle {
 
 }
 
-class OatDexFile_Ini extends OatDexFile {
+class OatDexFile_Inl extends OatDexFile {
 
     static hookOpen_1() {
         Interceptor.attach(getSym("_ZN3art7OatFile4OpenEiRKNSt3__112basic_stringIcNS1_11char_traitsIcEENS1_9allocatorIcEEEES9_bbPKcPNS_6MemMapEPS7_", "libart.so")!, {
@@ -206,10 +208,10 @@ class OatDexFile_Ini extends OatDexFile {
 }
 
 // setImmediate(() => {
-//     // OatDexFile_Ini.hookOpen_1()
-//     // OatDexFile_Ini.hookOpen_2()
-//     // OatDexFile_Ini.hookOpenWithElfFile()
-//     // OatDexFile_Ini.hookOpen_3()
-//     OatDexFile_Ini.hookOpen_4()
-//     OatDexFile_Ini.hookOpen_5()
+//     // OatDexFile_Inl.hookOpen_1()
+//     // OatDexFile_Inl.hookOpen_2()
+//     // OatDexFile_Inl.hookOpenWithElfFile()
+//     // OatDexFile_Inl.hookOpen_3()
+//     OatDexFile_Inl.hookOpen_4()
+//     OatDexFile_Inl.hookOpen_5()
 // })

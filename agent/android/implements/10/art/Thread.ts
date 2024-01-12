@@ -1,4 +1,4 @@
-import { ManagedStack, RuntimeStats, StateAndFlags } from "./Thread_Ini"
+import { ManagedStack, RuntimeStats } from "./Thread_Inl"
 import { callSym, getSym } from "../../../Utils/SymHelper"
 import { StdString } from "../../../../tools/StdString"
 import { ArtMethod } from "./mirror/ArtMethod"

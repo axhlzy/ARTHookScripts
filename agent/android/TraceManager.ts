@@ -51,12 +51,16 @@ export class TraceManager {
         ExecuteSwitchImplCppManager.enableHook()
     }
 
+    public static TraceArtMethodInvoke() {
+        HookArtMethodInvoke()
+    }
+
 }
 
 setImmediate(() => {
 
     TraceManager.Trace_DefineClass()
-    TraceManager.Trace_ExecuteSwitchImplCpp()
+    // TraceManager.Trace_ExecuteSwitchImplCpp()
     // TraceManager.Trace_OpenCommon()
     // TraceManager.Trace_CallConstructors()
 

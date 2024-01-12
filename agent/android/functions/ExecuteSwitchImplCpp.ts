@@ -61,7 +61,7 @@ export class ExecuteSwitchImplCppManager {
                         const ctx: SwitchImplContext = new SwitchImplContext(args[0])
                         // LOGD(ctx.shadow_frame)
 
-                        ctx.shadow_frame.printBackTraceWithSmali()
+                        // ctx.shadow_frame.printBackTraceWithSmali()
 
                         const threadInfo = `${Process.getCurrentThreadId()} ${ctx.self.GetThreadName()}`
                         const lastMethod: ArtMethod | null = ctx.shadow_frame.link.method
@@ -80,7 +80,6 @@ export class ExecuteSwitchImplCppManager {
 
                         // LOGD(ctx.shadow_frame)
                         // LOGD(ctx.result_register)
-
                         newLine()
                     }
                 })

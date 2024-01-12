@@ -1,4 +1,5 @@
-# https://source.android.com/docs/core/runtime/jit-compiler?hl=zh-cn
+# ref https://source.android.com/docs/core/runtime/jit-compiler?hl=zh-cn
+# ref https://www.cnblogs.com/ClientInfra/p/15379050.html
 
 $packageName = Read-Host "Input PackageName"
 $packageName = $packageName.Trim()

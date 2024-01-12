@@ -91,6 +91,28 @@ export class UnUsedInstruction extends JSHandleNotImpl {
         ptr.writeU32(0x3E)
     }
 
+    private static newClass(): Java.Wrapper {
+        const rewardClass = Java.registerClass({
+            name: "com.Test.CallbackClass",
+            superClass: Java.use("java.lang.Object"),
+            implements: undefined,
+            methods: {
+                ['onReward']: {
+                    returnType: 'void',
+                    argumentTypes: ['boolean'],
+                    implementation: function (z: boolean) {
+                        LOGW(`called CallbackClass -> onReward ${z}`)
+                    }
+                }
+            }
+        })
+        return rewardClass
+    }
+
+    public static test() {
+        return UnUsedInstruction.newClass().onReward.handle
+    }
+
 }
 
 setImmediate(() => { UnUsedInstruction.catchUnexpectedOpcode() })
@@ -102,3 +124,4 @@ declare global {
 
 // ModSmaliInstruction(ptr(0x73757b9534), pathToArtMethod("com.bytedance.applog.util.i.a").GetDexFile())
 globalThis.ModSmaliInstruction = UnUsedInstruction.ModSmaliInstruction
+globalThis.test = () => { Java.perform(() => { LOGD(UnUsedInstruction.test()) }) }

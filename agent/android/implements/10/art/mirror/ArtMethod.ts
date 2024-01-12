@@ -550,7 +550,7 @@ export class ArtMethod extends JSHandle implements IArtMethod, SizeOfClass {
 
 Reflect.set(globalThis, 'ArtMethod', ArtMethod)
 
-class ArtMethod_Ini extends ArtMethod {
+class ArtMethod_Inl extends ArtMethod {
 
     static HookArtMethodInvoke() {
 
@@ -609,7 +609,9 @@ class ArtMethod_Ini extends ArtMethod {
             }, 'void', ['pointer']),
             CalledArtMethod: new NativeCallback((artMethod: NativePointer) => {
                 const method: ArtMethod = new ArtMethod(artMethod)
-                // if (method.methodName.includes("com.clash.zombie"))
+                // if (method.methodName.includes("com.clash.zombie")) {
+                //     SuspendAll()
+                // }
                 LOGD(`Called -> ${method.methodName}`)
             }, 'void', ['pointer'])
 
@@ -637,4 +639,4 @@ declare global {
     var HookArtMethodInvoke: () => void
 }
 
-globalThis.HookArtMethodInvoke = ArtMethod_Ini.HookArtMethodInvoke
+globalThis.HookArtMethodInvoke = ArtMethod_Inl.HookArtMethodInvoke
