@@ -6,10 +6,11 @@ import { CompactDexFile_CodeItem } from "../dexfile/CompactDexFile"
 import { OatQuickMethodHeader } from "../OatQuickMethodHeader"
 import { callSym, getSym } from "../../../../Utils/SymHelper"
 import { ArtModifiers } from "../../../../../tools/modifiers"
+import { KeyValueStore } from "../../../../../tools/common"
 import { StdString } from "../../../../../tools/StdString"
 import { InvokeType } from "../../../../../tools/enum"
-import { JSHandle } from "../../../../JSHandle"
 import { ArtInstruction } from "../Instruction"
+import { JSHandle } from "../../../../JSHandle"
 import { DexFile } from "../dexfile/DexFile"
 import { PointerSize } from "../Globals"
 import { JValue } from "../Type/JValue"
@@ -262,8 +263,12 @@ export class ArtMethod extends JSHandle implements IArtMethod, SizeOfClass {
     }
 
     get methodName(): string {
-        const PrettyJavaAccessFlagsStr: string = PrettyAccessFlags(ptr(this.handle.add(getArtMethodSpec().offset.accessFlags).readU32()))
-        return `${PrettyJavaAccessFlagsStr}${this.PrettyMethod()}`
+        try {
+            const PrettyJavaAccessFlagsStr: string = PrettyAccessFlags(ptr(this.handle.add(getArtMethodSpec().offset.accessFlags).readU32()))
+            return `${PrettyJavaAccessFlagsStr}${this.PrettyMethod()}`
+        } catch (error) {
+            return 'ERROR'
+        }
     }
 
     // bool ArtMethod::HasSameNameAndSignature(ArtMethod* other) 
@@ -550,7 +555,12 @@ export class ArtMethod extends JSHandle implements IArtMethod, SizeOfClass {
 
 Reflect.set(globalThis, 'ArtMethod', ArtMethod)
 
+
 class ArtMethod_Inl extends ArtMethod {
+
+    private static filterTimes_ptr: NativePointer = Memory.alloc(Process.pointerSize).writeInt(5)
+    private static filterThreadId_ptr: NativePointer = Memory.alloc(Process.pointerSize).writeInt(-1)
+    private static filterMethodName_ptr: NativePointer = Memory.alloc(Process.pointerSize * 10).writeUtf8String('')
 
     static HookArtMethodInvoke() {
 
@@ -573,21 +583,51 @@ class ArtMethod_Inl extends ArtMethod {
             g_free (message);
         }
 
-        extern void CalledArtMethod(void* artMethod);
+        typedef struct _ArtMethod ArtMethod;
+
+        extern void CalledArtMethod(ArtMethod* artMethod);
+
+        typedef guint8 jboolean;
+        typedef union _StdString StdString;
+        typedef struct _StdStringShort StdStringShort;
+        typedef struct _StdStringLong StdStringLong;
+
+        struct _StdStringShort {
+            guint8 size;
+            gchar data[(3 * sizeof (gpointer)) - sizeof (guint8)];
+        };
+
+        struct _StdStringLong {
+            gsize capacity;
+            gsize size;
+            gchar * data;
+        };
+
+        union _StdString {
+            StdStringShort s;
+            StdStringLong l;
+        };
+        
+        // std::string PrettyMethod(bool with_signature = true)
+        extern void ArtPrettyMethodFunc(StdString * result, ArtMethod * method, jboolean with_signature);
 
         void(*it)(void* dexFile);
 
+        extern int filterTimes;
+        extern int filterThreadId;
+        extern const char* filterMethodName;
+
         extern GHashTable *ptrHash;
 
-        gboolean filterPtr(void* ptr) {
+        gboolean filterMethodCount(void* ptr) {
             if (ptrHash == NULL) {
                 ptrHash = g_hash_table_new_full(g_direct_hash, g_direct_equal, NULL, NULL);
             }
 
             guint count = GPOINTER_TO_UINT(g_hash_table_lookup(ptrHash, ptr));
 
-            if (count >= 5) {
-                // frida_log("Filter PASS (Count >= 5) -> %p", ptr);
+            if (count >= filterTimes) {
+                // frida_log("Filter PASS (Count >= %d ) -> %p", filterTimes, ptr);
                 return FALSE;
             } else {
                 g_hash_table_insert(ptrHash, ptr, GUINT_TO_POINTER(count + 1));
@@ -595,15 +635,38 @@ class ArtMethod_Inl extends ArtMethod {
             }
         }
 
+        gboolean filterThreadIdCount(GumInvocationContext *ctx) {
+            if (-1 == filterThreadId) return TRUE;
+            guint threadid = gum_invocation_context_get_thread_id(ctx);
+            return threadid == filterThreadId;
+        }
+
+        gboolean filterMethodNameCount(ArtMethod* artMethod) {
+            StdString result;
+            ArtPrettyMethodFunc(&result, artMethod, TRUE);
+            const char* methodName = result.l.data;
+            frida_log("methodName -> %s", methodName);
+            if (g_str_has_prefix(methodName, filterMethodName)) {
+                return TRUE;
+            }
+            return FALSE;
+        }
+
         void onEnter(GumInvocationContext *ctx) {
-            void* artMethod = gum_invocation_context_get_nth_argument(ctx, 0);
-            if (filterPtr(artMethod)) {
+            ArtMethod* artMethod = gum_invocation_context_get_nth_argument(ctx, 0);
+            if (filterMethodCount(artMethod) && filterThreadIdCount(ctx) 
+                // && filterMethodNameCount(artMethod)
+            ) {
                 CalledArtMethod(artMethod);
             }
         }
 
         `, {
+            filterTimes: ArtMethod_Inl.filterTimes_ptr,
+            filterThreadId: ArtMethod_Inl.filterThreadId_ptr,
+            filterMethodName: ArtMethod_Inl.filterMethodName_ptr,
             ptrHash: Memory.alloc(Process.pointerSize),
+            ArtPrettyMethodFunc: getSym("_ZN3art9ArtMethod12PrettyMethodEb"),
             _frida_log: new NativeCallback((message: NativePointer) => {
                 LOGZ(message.readCString())
             }, 'void', ['pointer']),
@@ -612,7 +675,8 @@ class ArtMethod_Inl extends ArtMethod {
                 // if (method.methodName.includes("com.clash.zombie")) {
                 //     SuspendAll()
                 // }
-                LOGD(`Called -> ${method.methodName}`)
+                const msg: string = `Called [${Process.id}|${Process.getCurrentThreadId()}] -> ${method.methodName}`
+                method.methodName == "ERROR" ? LOGE(msg) : LOGD(msg)
             }, 'void', ['pointer'])
 
         }) as NativeInvocationListenerCallbacks)
@@ -633,7 +697,19 @@ class ArtMethod_Inl extends ArtMethod {
         })
     }
 
+    static onValueChanged(key: string, value: number | string): void {
+        if (key != "filterTimes" && key != "filterThreadId" && key != "filterMethodName") return
+        LOGZ(`ArtMethodInvoke Got New Value -> ${key} -> ${value}`)
+        if (key == "filterTimes") ArtMethod_Inl.filterTimes_ptr.writeInt(value as number)
+        if (key == "filterThreadId") ArtMethod_Inl.filterThreadId_ptr.writeInt(value as number)
+        if (key == "filterMethodName") ArtMethod_Inl.filterMethodName_ptr.writeUtf8String(value as string)
+    }
+
 }
+
+setImmediate(() => {
+    KeyValueStore.getInstance<string, number>().subscribe(ArtMethod_Inl)
+})
 
 declare global {
     var HookArtMethodInvoke: () => void

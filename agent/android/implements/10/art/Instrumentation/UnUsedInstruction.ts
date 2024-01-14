@@ -1,5 +1,8 @@
+import { CodeItemInstructionAccessor } from "../dexfile/CodeItemInstructionAccessor"
 import { JSHandleNotImpl } from "../../../../JSHandle"
+import { R } from "../../../../../tools/intercepter"
 import { getSym } from "../../../../Utils/SymHelper"
+import { ArtMethod } from "../mirror/ArtMethod"
 import { ArtInstruction } from "../Instruction"
 import { ShadowFrame } from "../ShadowFrame"
 import { DexFile } from "../dexfile/DexFile"
@@ -64,31 +67,42 @@ export class UnUsedInstruction extends JSHandleNotImpl {
 
         const sym_addr: NativePointer = getSym("_ZN3art11interpreter16UnexpectedOpcodeEPKNS_11InstructionERKNS_11ShadowFrameE", "libart.so")
         const src_function = new NativeFunction(sym_addr, 'pointer', ['pointer', 'pointer'])
-        Interceptor.replace(sym_addr, new NativeCallback((inst_: NativePointer, shadow_frame_: NativePointer) => {
+        R(sym_addr, new NativeCallback((inst_: NativePointer, shadow_frame_: NativePointer) => {
             let inst = new ArtInstruction(inst_)
             let shadow_frame = new ShadowFrame(shadow_frame_)
+            LOGD(`UnexpectedOpcode ${inst.toString()} ${shadow_frame.toString()}`)
+            return
             if (UnUsedInstruction.listenerMap.has(inst.opcode) && UnUsedInstruction.listenerMap.get(inst.opcode).length > 0) {
                 UnUsedInstruction.listenerMap.get(inst.opcode).forEach(listener => {
                     listener(inst, shadow_frame)
                 })
             } else {
                 shadow_frame.printBackTraceWithSmali()
-                LOGD(`UnexpectedOpcode ${inst.toString()} ${shadow_frame.toString()}`)
-                UnUsedInstruction.lastInsPtr.writePointer(UnUsedInstruction.lastInsValue)
-                // const last = shadow_frame.link
-                UnUsedInstruction.lastInsPtr.writePointer(UnUsedInstruction.lastInsValue)
+                UnUsedInstruction.mapModify.has(inst_) && inst_.writeByteArray(UnUsedInstruction.mapModify.get(inst_))
+                shadow_frame.SetDexPC(shadow_frame.GetDexPC())
             }
         }, 'pointer', ['pointer', 'pointer']))
     }
 
-    static lastInsPtr: NativePointer = NULL
-    static lastInsValue: NativePointer = NULL
+    private static mapModify: Map<NativePointer, ArrayBuffer> = new Map()
 
-    public static ModSmaliInstruction(ptr: NativePointer, dexfile: DexFile) {
+    public static ModSmaliInstruction(methodPath: string = "com.unity3d.player.UnityPlayer.UnitySendMessage", offset: number = 0x42) {
+        const CurrentMethod: ArtMethod = pathToArtMethod(methodPath)
+        const dexfile: DexFile = CurrentMethod.GetDexFile()
+        if (dexfile.is_compact_dex) throw new Error("not support compact dex")
+        const dexInstructions: CodeItemInstructionAccessor = CurrentMethod.DexInstructions()
+        const ins_ptr_patch_start: NativePointer = dexInstructions.CodeItem.insns_.add(offset)
+        const ins_ptr_patch_len = new ArtInstruction(ins_ptr_patch_start).SizeInCodeUnits
+        LOGD(`ins_ptr_patch_start ${ins_ptr_patch_start} ins_ptr_patch_len ${ins_ptr_patch_len}`)
+        const ins_arr: ArrayBuffer = ins_ptr_patch_start.readByteArray(ins_ptr_patch_len)
+        UnUsedInstruction.mapModify.set(ins_ptr_patch_start, ins_arr)
         if (dexfile.IsReadOnly()) dexfile.EnableWrite()
-        UnUsedInstruction.lastInsValue = ptr.readPointer()
-        UnUsedInstruction.lastInsPtr = ptr
-        ptr.writeU32(0x3E)
+        ins_ptr_patch_start.writeU32(UnUsedInstructions.UNUSED_3E)
+        if (ins_ptr_patch_len > 0x1) {
+            for (let iterP = ins_ptr_patch_start.add(0x1); iterP < ins_ptr_patch_start.add(ins_ptr_patch_len); iterP = iterP.add(0x1)) {
+                iterP.writeU8(0x0)
+            }
+        }
     }
 
     private static newClass(): Java.Wrapper {
@@ -97,11 +111,11 @@ export class UnUsedInstruction extends JSHandleNotImpl {
             superClass: Java.use("java.lang.Object"),
             implements: undefined,
             methods: {
-                ['onReward']: {
+                ['OnCalled']: {
                     returnType: 'void',
                     argumentTypes: ['boolean'],
                     implementation: function (z: boolean) {
-                        LOGW(`called CallbackClass -> onReward ${z}`)
+                        LOGW(`called CallbackClass -> OnCalled ${z}`)
                     }
                 }
             }
@@ -117,11 +131,19 @@ export class UnUsedInstruction extends JSHandleNotImpl {
 
 setImmediate(() => { UnUsedInstruction.catchUnexpectedOpcode() })
 
+Reflect.set(globalThis, "UnUsedInstruction", UnUsedInstruction)
 
 declare global {
-    var ModSmaliInstruction: (ptr: NativePointer, dexfile: DexFile) => void
+    var ModSmaliInstruction: (methodPath: string, offset: number) => void
+    var test: () => void
+    var testCallSendMessage
 }
 
-// ModSmaliInstruction(ptr(0x73757b9534), pathToArtMethod("com.bytedance.applog.util.i.a").GetDexFile())
 globalThis.ModSmaliInstruction = UnUsedInstruction.ModSmaliInstruction
 globalThis.test = () => { Java.perform(() => { LOGD(UnUsedInstruction.test()) }) }
+globalThis.testCallSendMessage = () => {
+    Java.perform(() => {
+        var JavaString = Java.use("java.lang.String")
+        Java.use("com.unity3d.player.UnityPlayer").UnitySendMessage(JavaString.$new("1"), JavaString.$new("2"), JavaString.$new("3"))
+    })
+}

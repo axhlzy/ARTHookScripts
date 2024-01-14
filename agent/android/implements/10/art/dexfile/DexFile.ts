@@ -424,7 +424,7 @@ export class DexFile extends JSHandle {
     // bool IsReadOnly() const;
     IsReadOnly(): boolean {
         if (this.is_compact_dex) {
-            LOGE("EnableWrite() not supported for compact dex files")
+            LOGE("IsReadOnly() not supported for compact dex files \n\t rm -rf /data/app/xxx/oat first")
             return false
         }
         let ret: boolean = !callSym<NativePointer>(
@@ -438,7 +438,7 @@ export class DexFile extends JSHandle {
     // bool DisableWrite() const;
     DisableWrite(): boolean {
         if (this.is_compact_dex) {
-            LOGE("EnableWrite() not supported for compact dex files")
+            LOGE("DisableWrite() not supported for compact dex files \n\t rm -rf /data/app/xxx/oat first")
             return false
         }
         let ret: boolean = !callSym<NativePointer>(
@@ -452,7 +452,7 @@ export class DexFile extends JSHandle {
     // bool EnableWrite() const;
     EnableWrite(): boolean {
         if (this.is_compact_dex) {
-            LOGE("EnableWrite() not supported for compact dex files")
+            LOGE("EnableWrite() not supported for compact dex files \n\t rm -rf /data/app/xxx/oat first")
             return false
         }
         let ret: boolean = !callSym<NativePointer>(

@@ -23,7 +23,12 @@ export class StdString {
     }
 
     static from(pointer: NativePointer) {
-        return pointer.add(Process.pointerSize * 2).readCString()
+        try {
+            return pointer.add(Process.pointerSize * 2).readCString()
+        } catch (error) {
+            // LOGE("StdString.from ERROR" + error)
+            return 'ERROR'
+        }
     }
 
     private static fromPointersRetInstance(ptrs: NativePointer[]): StdString {

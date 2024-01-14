@@ -124,8 +124,8 @@ while ($option -ne 9) {
             $result = adb shell cmd package compile -m speed $packageName
         }
         "6" {
-            Write-Host "execute -> cmd package compile -m everything $packageName" -ForegroundColor Green
-            $result = adb shell cmd package compile -m everything $packageName
+            Write-Host "execute -> cmd package compile -m everything $packageName --host" -ForegroundColor Green
+            $result = adb shell cmd package compile -m everything $packageName -oat-symbols=/data/local/tmp/oat.sym
         }
         "7" {
             Write-Host "execute -> cmd package compile --reset $packageName" -ForegroundColor Green

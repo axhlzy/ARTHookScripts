@@ -32,7 +32,7 @@ export function callSym<T>(sym: string, md: string, retType: NativeType, argType
 }
 
 const Cache: Map<string, NativePointer> = new Map()
-export function getSym(symName: string, md: string, checkNotFunction: boolean = false): NativePointer | null {
+export function getSym(symName: string, md: string = "libart.so", checkNotFunction: boolean = false): NativePointer | null {
     if (Cache.has(symName)) return Cache.get(symName)!
     if (symName == undefined || md == null || symName == "" || md == "")
         throw new Error(`Usage: getSym(symName: string, md: string, check: boolean = false)`)
@@ -84,10 +84,5 @@ export function getSym(symName: string, md: string, checkNotFunction: boolean = 
     return address
 }
 
-// declare global {
-//     function callSym<T>(sym: string, md: string, retType: NativeType, argTypes: NativeType[], ...args: any[]): T
-//     function getSym(symName: string, md: string, check?: boolean): NativePointer | null
-// }
-
-globalThis.callSym = callSym
-globalThis.getSym = getSym
+Reflect.set(globalThis, "getSym", getSym)
+Reflect.set(globalThis, "callSym", callSym)

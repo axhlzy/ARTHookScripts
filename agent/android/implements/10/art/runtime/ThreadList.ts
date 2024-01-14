@@ -166,14 +166,16 @@ export class ThreadList extends JSHandleNotImpl {
         const tempMemory = Memory.alloc(Process.pointerSize)
         const threadLists: { thread: ArtThread, context: NativePointer }[] = new Array()
         ThreadList.ForEach(new NativeCallback((thread: NativePointer, context: NativePointer) => {
-            threadLists.push({ thread: new ArtThread(thread), context: context })
+            try {
+                threadLists.push({ thread: new ArtThread(thread), context: context })
+            } catch (error) {
+                LOGE("ThreadList.ForEach ERROR" + error)
+            }
         }, "void", ["pointer", "pointer"]), tempMemory)
         return threadLists
     }
 
 }
-
-globalThis.ThreadList = ThreadList
 
 export enum SuspendReason {
     // Suspending for internal reasons (e.g. GC, stack trace, etc.).

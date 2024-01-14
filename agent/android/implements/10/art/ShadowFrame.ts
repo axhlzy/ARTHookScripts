@@ -262,8 +262,8 @@ export class ShadowFrame extends JSHandle {
     }
 
     // void SetDexPC(uint32_t dex_pc) 
-    SetDexPC(dex_pc_v: uint32_t): void {
-        this.dex_pc = dex_pc_v
+    SetDexPC(dex_pc_v: NativePointer): void {
+        this.dex_pc = dex_pc_v.toUInt32()
         this.dex_pc_ptr = NULL
     }
 

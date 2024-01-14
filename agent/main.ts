@@ -6,9 +6,6 @@ globalThis.testArtMethod = () => {
 
     Java.perform(() => {
 
-        const JavaString = Java.use("java.lang.String")
-        Java.use("com.unity3d.player.UnityPlayer").UnitySendMessage(JavaString.$new("1"), JavaString.$new("2"), JavaString.$new("3"))
-
         let method: ArtMethod = pathToArtMethod("com.unity3d.player.UnityPlayer.UnitySendMessage")
         let dexFile: DexFile = method.GetDexFile()
         method.show()
