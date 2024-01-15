@@ -8,6 +8,7 @@ import { callSym, getSym } from "../../../../Utils/SymHelper"
 import { ArtModifiers } from "../../../../../tools/modifiers"
 import { KeyValueStore } from "../../../../../tools/common"
 import { StdString } from "../../../../../tools/StdString"
+import { DexItemStruct } from "../dexfile/DexFileStructs"
 import { InvokeType } from "../../../../../tools/enum"
 import { ArtInstruction } from "../Instruction"
 import { JSHandle } from "../../../../JSHandle"
@@ -216,6 +217,22 @@ export class ArtMethod extends JSHandle implements IArtMethod, SizeOfClass {
         if (dexCodeItemOffset == 0) return ptr(0)
         const dexFile = this.GetDexFile()
         return dexFile.data_begin.add(dexCodeItemOffset)
+    }
+
+    GetCodeItemPack(): { headerStart: NativePointer, headerSize: number, insnsStart: NativePointer, insnsSize: number } {
+        const codeItem = this.GetCodeItem()
+        const accesor: CodeItemInstructionAccessor = this.DexInstructions()
+        const code_item: DexItemStruct = accesor.CodeItem
+        if (codeItem.isNull()) return { headerStart: ptr(0), headerSize: 0, insnsStart: ptr(0), insnsSize: 0 }
+        const headerSize = code_item.header_size
+        const insnsSize = code_item.insns_size
+        const headerStart = codeItem
+        const insnsStart = codeItem.add(headerSize)
+        return { headerStart, headerSize, insnsStart, insnsSize }
+    }
+
+    SetCodeItem(codeItem: NativePointer): void {
+        this.dex_code_item_offset_.writeU32(codeItem.sub(this.GetDexFile().data_begin).toInt32())
     }
 
     GetDexCache(): DexCache {
@@ -460,7 +477,6 @@ export class ArtMethod extends JSHandle implements IArtMethod, SizeOfClass {
         const accessor: CodeItemInstructionAccessor = this.DexInstructions()
         const dex_file: DexFile = this.GetDexFile()
         const code_item: NativePointer = this.GetCodeItem()
-        let insns: ArtInstruction = accessor.InstructionAt()
         if (!this.jniCode.isNull()) {
             LOGD(`👉 ${this}`)
             LOGE(`jniCode is not null -> ${this.jniCode}`)
@@ -473,7 +489,7 @@ export class ArtMethod extends JSHandle implements IArtMethod, SizeOfClass {
         }
 
         newLine()
-        LOGD(this.methodName)
+        LOGD(`${this.methodName} @ ${this.handle}`)
         let disp_insns_info: string = `insns_size_in_code_units: ${accessor.insns_size_in_code_units} - ${ptr(accessor.insns_size_in_code_units)}`
         disp_insns_info += ` | method start: ${accessor.insns} | insns start ${code_item} | DEX: ${dex_file.handle}`
         LOGD(`\n[ ${disp_insns_info} ]\n`)
@@ -490,31 +506,16 @@ export class ArtMethod extends JSHandle implements IArtMethod, SizeOfClass {
         }
 
         let offset: number = 0
-        let last_offset: number = 0
-        let insns_num: number = 0
-        let count_num: number = num
-        const count_insns: number = accessor.insns_size_in_code_units * 2
-        while (true) {
-            const offStr: string = `[${(++insns_num).toString().padStart(3, ' ')}|${ptr(offset).toString().padEnd(5, ' ')}]`
-            LOGD(`${offStr} ${insns.handle} - ${insns.dumpHexLE()} | ${insns.dumpString(dex_file)}`)
+        let index: number = 0
+        this.forEachSmali((insns: ArtInstruction, _codeitem: DexItemStruct) => {
+            const offStr: string = `[${(++index).toString().padStart(3, ' ')}|${ptr(offset).toString().padEnd(5, ' ')}]`
+            LOGD(`${offStr} ${insns.handle} - ${insns.dumpHexLE()} |  ${insns.dumpString(dex_file)}`)
             offset += insns.SizeInCodeUnits
-            if (count_num != -1) {
-                if (--count_num <= 0 || ptr(offset).isNull()) break
-            }
-            else if (forceRet-- <= 0) {
+            if (forceRet-- <= 0) {
                 LOGW(`\nforce return counter -> ${forceRet}\nThere may be a loop error, check the code ...`)
-                break
+                return
             }
-            else if (last_offset == offset) {
-                LOGW(`\ninsns current offset -> [ ${offset} == ${last_offset} ] <- insns last offset\nThere may be a loop error, check the code ...`)
-                break
-            }
-            else {
-                if (offset >= count_insns) break
-            }
-            insns = insns.Next()
-            last_offset = offset
-        }
+        })
         newLine()
     }
 
@@ -551,6 +552,9 @@ export class ArtMethod extends JSHandle implements IArtMethod, SizeOfClass {
         newLine()
     }
 
+    public forEachSmali = (callback: (instruction: ArtInstruction, codeitem: DexItemStruct) => void): void => forEachSmali_static.bind(this)(this, callback)
+
+    public HookArtMethodInvoke = () => ArtMethod_Inl.HookArtMethodInvoke()
 }
 
 Reflect.set(globalThis, 'ArtMethod', ArtMethod)
@@ -707,12 +711,31 @@ class ArtMethod_Inl extends ArtMethod {
 
 }
 
+function forEachSmali_static(artMethod: ArtMethod, callback: (instruction: ArtInstruction, codeitem: DexItemStruct) => void): void {
+    const accessor: CodeItemInstructionAccessor = artMethod.DexInstructions()
+    const code_item = accessor.CodeItem
+    let insns: ArtInstruction = accessor.InstructionAt()
+    let offset: number = 0
+    let last_offset: number = 0
+    const count_insns: number = accessor.insns_size_in_code_units * 2
+    while (true) {
+        callback(insns, code_item)
+        offset += insns.SizeInCodeUnits
+        if (last_offset == offset) break // Prevent infinite loop
+        if (offset >= count_insns) break // end of code_item
+        insns = insns.Next()
+        last_offset = offset
+    }
+}
+
 setImmediate(() => {
     KeyValueStore.getInstance<string, number>().subscribe(ArtMethod_Inl)
 })
 
 declare global {
     var HookArtMethodInvoke: () => void
+    var forEachSmali: (artMethod: ArtMethod, callback: (instruction: ArtInstruction, codeitem: DexItemStruct) => void) => void
 }
 
 globalThis.HookArtMethodInvoke = ArtMethod_Inl.HookArtMethodInvoke
+globalThis.forEachSmali = forEachSmali_static

@@ -238,7 +238,7 @@ export class ShadowFrame extends JSHandle {
 
     // uint32_t GetDexPC() const 
     GetDexPC(): NativePointer {
-        return this.dex_pc_ptr_.isNull() ? this.dex_pc_ : this.dex_pc_ptr_.sub(this.dex_instructions_)
+        return this.dex_pc_ptr_.isNull() ? this.dex_pc_ : this.dex_instructions_.sub(this.dex_pc_ptr_)
     }
 
     // int16_t GetCachedHotnessCountdown() const 

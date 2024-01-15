@@ -50,12 +50,12 @@ export class CodeItemInstructionAccessor extends JSHandle implements SizeOfClass
         if (dexFile.is_compact_dex) {
             const codeItem: CompactDexFile_CodeItem = CodeItemInstructionAccessor.CodeItem(dexFile, dex_pc) as CompactDexFile_CodeItem
             accessor.insns_size_in_code_units = codeItem.insns_size_in_code_units
-            accessor.insns = codeItem.insns_
+            accessor.insns = codeItem.insns_start
             accessor.CodeItem = codeItem
         } else {
             const codeItem: StandardDexFile_CodeItem = CodeItemInstructionAccessor.CodeItem(dexFile, dex_pc) as StandardDexFile_CodeItem
             accessor.insns_size_in_code_units = codeItem.insns_size_in_code_units
-            accessor.insns = codeItem.insns_
+            accessor.insns = codeItem.insns_start
             accessor.CodeItem = codeItem
         }
         return accessor

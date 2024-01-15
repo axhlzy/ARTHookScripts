@@ -1,7 +1,11 @@
 import { KeyValueStore } from "../../../../../tools/common"
-import { R } from "../../../../../tools/intercepter"
 import { JSHandleNotImpl } from "../../../../JSHandle"
 import { getSym } from "../../../../Utils/SymHelper"
+import { R } from "../../../../../tools/intercepter"
+import { ShadowFrame } from "../ShadowFrame"
+import { ArtThread } from "../Thread"
+
+type MoveToExceptionHandleCalledListener = (ret: NativePointerValue, thread: ArtThread, shadowFrame: ShadowFrame, instrumentation: NativePointer) => NativePointerValue
 
 export class interpreter extends JSHandleNotImpl {
 
@@ -56,14 +60,25 @@ export class interpreter extends JSHandleNotImpl {
     }
 
     // _ZN3art11interpreter22MoveToExceptionHandlerEPNS_6ThreadERNS_11ShadowFrameEPKNS_15instrumentation15InstrumentationE
-    // bool MoveToExceptionHandler(art::Thread*, art::ShadowFrame&, art::instrumentation::Instrumentation const*)
+    // bool MoveToExceptionHandler(art::Thread* self, art::ShadowFrame& shadow_frame, art::instrumentation::Instrumentation const* instrumentation)
     public static Hook_MoveToExceptionHandler() {
         const target: NativePointer = getSym("_ZN3art11interpreter22MoveToExceptionHandlerEPNS_6ThreadERNS_11ShadowFrameEPKNS_15instrumentation15InstrumentationE")
+        const target_SrcCall = new NativeFunction(target, 'pointer', ['pointer', 'pointer', 'pointer'])
         try {
-            R(target, new NativeCallback(() => {
-                LOGD(`Called MoveToExceptionHandler()`)
-                return
-            }, 'bool', []))
+            R(target, new NativeCallback((self: NativePointer, shadow_frame: NativePointer, instrumentation: NativePointer) => {
+                let ret = target_SrcCall(self, shadow_frame, instrumentation)
+                // const thread = new ArtThread(self)
+                const shadowFrame = new ShadowFrame(shadow_frame)
+                // if (!shadowFrame.dex_instructions.handle.isNull()) {
+                //     LOGD(`Called MoveToExceptionHandler() -> ${shadowFrame.method.methodName} -> ${ret}`)
+                // }
+                // const instrumentation_ = instrumentation
+                // interpreter.moveToExceptionHandleCalledListeners.forEach(listener => {
+                //     const lis_ret: NativePointerValue = listener(ret, thread, shadowFrame, instrumentation_)
+                //     if (lis_ret) ret = lis_ret
+                // })
+                return ret
+            }, 'pointer', ['pointer', 'pointer', 'pointer']))
         } catch (error) {
             // LOGE(`Hook_MoveToExceptionHandler ${error}`)
         }
@@ -75,6 +90,12 @@ export class interpreter extends JSHandleNotImpl {
         if (key == "CanUseMterp") interpreter.CanUseMterp = value
     }
 
+    private static moveToExceptionHandleCalledListeners: MoveToExceptionHandleCalledListener[] = []
+
+    public static addMoveToExceptionHandleCalledListener(listener: MoveToExceptionHandleCalledListener) {
+        interpreter.moveToExceptionHandleCalledListeners.push(listener)
+    }
+
 }
 
 setImmediate(() => {
@@ -82,11 +103,10 @@ setImmediate(() => {
 })
 
 setImmediate(() => {
-    interpreter.Hook_CanUseMterp()
-
-    interpreter.Hook_AbortTransaction()
-    interpreter.Hook_AbortTransactionV()
-    // interpreter.Hook_MoveToExceptionHandler()
+    interpreter.Hook_CanUseMterp() // by defult
+    // interpreter.Hook_AbortTransaction()
+    // interpreter.Hook_AbortTransactionV()
+    interpreter.Hook_MoveToExceptionHandler() // by defult
 
 })
 

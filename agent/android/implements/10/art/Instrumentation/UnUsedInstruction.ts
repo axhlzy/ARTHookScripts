@@ -6,26 +6,11 @@ import { ArtMethod } from "../mirror/ArtMethod"
 import { ArtInstruction } from "../Instruction"
 import { ShadowFrame } from "../ShadowFrame"
 import { DexFile } from "../dexfile/DexFile"
+import { Opcode } from "./InstructionList"
 
-enum UnUsedInstructions {
-    UNUSED_3E = 0x3E,
-    UNUSED_3F = 0x3F,
-    UNUSED_40 = 0x40,
-    UNUSED_41 = 0x41,
-    UNUSED_42 = 0x42,
-    UNUSED_43 = 0x43,
-    UNUSED_79 = 0x79,
-    UNUSED_7A = 0x7A,
-    UNUSED_F3 = 0xF3,
-    UNUSED_F4 = 0xF4,
-    UNUSED_F5 = 0xF5,
-    UNUSED_F6 = 0xF6,
-    UNUSED_F7 = 0xF7,
-    UNUSED_F8 = 0xF8,
-    UNUSED_F9 = 0xF9,
-}
+class UnUsedInstructions extends Opcode { }
 
-export class UnUsedInstruction extends JSHandleNotImpl {
+export class UnUsedInstructionManager extends JSHandleNotImpl {
 
     // listenerMap record UNUSED_F6 and listener
     private static listenerMap: Map<UnUsedInstructions, Function[]> = new Map()
@@ -72,13 +57,13 @@ export class UnUsedInstruction extends JSHandleNotImpl {
             let shadow_frame = new ShadowFrame(shadow_frame_)
             LOGD(`UnexpectedOpcode ${inst.toString()} ${shadow_frame.toString()}`)
             return
-            if (UnUsedInstruction.listenerMap.has(inst.opcode) && UnUsedInstruction.listenerMap.get(inst.opcode).length > 0) {
-                UnUsedInstruction.listenerMap.get(inst.opcode).forEach(listener => {
+            if (UnUsedInstructionManager.listenerMap.has(inst.opcode) && UnUsedInstructionManager.listenerMap.get(inst.opcode).length > 0) {
+                UnUsedInstructionManager.listenerMap.get(inst.opcode).forEach(listener => {
                     listener(inst, shadow_frame)
                 })
             } else {
                 shadow_frame.printBackTraceWithSmali()
-                UnUsedInstruction.mapModify.has(inst_) && inst_.writeByteArray(UnUsedInstruction.mapModify.get(inst_))
+                UnUsedInstructionManager.mapModify.has(inst_) && inst_.writeByteArray(UnUsedInstructionManager.mapModify.get(inst_))
                 shadow_frame.SetDexPC(shadow_frame.GetDexPC())
             }
         }, 'pointer', ['pointer', 'pointer']))
@@ -91,11 +76,11 @@ export class UnUsedInstruction extends JSHandleNotImpl {
         const dexfile: DexFile = CurrentMethod.GetDexFile()
         if (dexfile.is_compact_dex) throw new Error("not support compact dex")
         const dexInstructions: CodeItemInstructionAccessor = CurrentMethod.DexInstructions()
-        const ins_ptr_patch_start: NativePointer = dexInstructions.CodeItem.insns_.add(offset)
+        const ins_ptr_patch_start: NativePointer = dexInstructions.CodeItem.insns_start.add(offset)
         const ins_ptr_patch_len = new ArtInstruction(ins_ptr_patch_start).SizeInCodeUnits
         LOGD(`ins_ptr_patch_start ${ins_ptr_patch_start} ins_ptr_patch_len ${ins_ptr_patch_len}`)
         const ins_arr: ArrayBuffer = ins_ptr_patch_start.readByteArray(ins_ptr_patch_len)
-        UnUsedInstruction.mapModify.set(ins_ptr_patch_start, ins_arr)
+        UnUsedInstructionManager.mapModify.set(ins_ptr_patch_start, ins_arr)
         if (dexfile.IsReadOnly()) dexfile.EnableWrite()
         ins_ptr_patch_start.writeU32(UnUsedInstructions.UNUSED_3E)
         if (ins_ptr_patch_len > 0x1) {
@@ -124,14 +109,14 @@ export class UnUsedInstruction extends JSHandleNotImpl {
     }
 
     public static test() {
-        return UnUsedInstruction.newClass().onReward.handle
+        return UnUsedInstructionManager.newClass().OnCalled.handle
     }
 
 }
 
-setImmediate(() => { UnUsedInstruction.catchUnexpectedOpcode() })
+setImmediate(() => { UnUsedInstructionManager.catchUnexpectedOpcode() })
 
-Reflect.set(globalThis, "UnUsedInstruction", UnUsedInstruction)
+Reflect.set(globalThis, "UnUsedInstructionManager", UnUsedInstructionManager)
 
 declare global {
     var ModSmaliInstruction: (methodPath: string, offset: number) => void
@@ -139,8 +124,8 @@ declare global {
     var testCallSendMessage
 }
 
-globalThis.ModSmaliInstruction = UnUsedInstruction.ModSmaliInstruction
-globalThis.test = () => { Java.perform(() => { LOGD(UnUsedInstruction.test()) }) }
+globalThis.ModSmaliInstruction = UnUsedInstructionManager.ModSmaliInstruction
+globalThis.test = () => { Java.perform(() => { LOGD(UnUsedInstructionManager.test()) }) }
 globalThis.testCallSendMessage = () => {
     Java.perform(() => {
         var JavaString = Java.use("java.lang.String")

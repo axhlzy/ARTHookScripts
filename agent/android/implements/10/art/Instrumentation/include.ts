@@ -1,5 +1,8 @@
 import './enum'
+import './SmaliWriter'
 import './UnUsedInstruction'
+import './InstructionList'
+import './SmalinInlineManager'
 import './Instrumentation'
 import './InstrumentationListener'
 import './InstrumentationStackFrame'

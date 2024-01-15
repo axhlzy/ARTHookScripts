@@ -6,6 +6,21 @@ import { DexProtoIndex, DexStringIndex, DexTypeIndex } from "./DexIndex"
 import { JSHandleNotImpl } from "../../../../JSHandle"
 import { PointerSize } from "../Globals"
 
+export interface DexItemStruct {
+
+    // src
+    ins_size: number
+    outs_size: number
+    tries_size: number
+    insns_size_in_code_units: number
+
+    // replenishment
+    header_start: NativePointer
+    header_size: number
+    insns_start: NativePointer
+    insns_size: number
+}
+
 export class DexTypeItem extends JSHandleNotImpl {
 
     // dex::TypeIndex type_idx_;  // index into type_ids section

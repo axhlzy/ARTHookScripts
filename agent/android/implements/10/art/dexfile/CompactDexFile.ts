@@ -26,7 +26,7 @@ export class CompactDexFile_CodeItem extends DexFile_CodeItem {
 
     toString(): string {
         let disp: string = `CompactDexFile::CodeItem<${this.handle}>`
-        disp += `\n\tfields: ${this.fields} | insns_count_and_flags: ${this.insns_count_and_flags} | insns: ${this.insns}`
+        disp += `\n\tfields: ${this.fields} | insns_count_and_flags: ${this.insns_count_and_flags} | insns: ${this.insns_start}`
         disp += `\n\tregisters_size: ${this.registers_size} | ins_size: ${this.ins_size} | outs_size: ${this.outs_size} | tries_size: ${this.tries_size}`
         disp += `\n\tinsns_size_in_code_units: ${this.insns_size_in_code_units} | extension_preheader: ${this.extension_preheader}`
         return disp
@@ -44,8 +44,8 @@ export class CompactDexFile_CodeItem extends DexFile_CodeItem {
         return ptr(this.insns_count_and_flags_.readU16())
     }
 
-    get insns(): NativePointer {
-        return this.insns_.readPointer()
+    set insns_count_and_flags(insns_count_and_flags: NativePointer) {
+        this.insns_count_and_flags_.writeU16(insns_count_and_flags.toInt32())
     }
 
     set fields(fields: NativePointer) {
@@ -60,6 +60,10 @@ export class CompactDexFile_CodeItem extends DexFile_CodeItem {
         return (this.fields.and(0xF00).toUInt32()) >> (4 * 2)
     }
 
+    public set ins_size(ins_size: number) {
+        this.fields = ptr((ins_size << (4 * 2)) | this.fields.toUInt32())
+    }
+
     public get outs_size(): number {
         return (this.fields.toUInt32() & 0xF0) >> (4 * 1)
     }
@@ -72,9 +76,28 @@ export class CompactDexFile_CodeItem extends DexFile_CodeItem {
         return this.insns_count_and_flags.shr(kInsnsSizeShift).toUInt32()
     }
 
+    public set insns_size_in_code_units(insns_size_in_code_units: number) {
+        this.insns_count_and_flags = ptr((insns_size_in_code_units << kInsnsSizeShift) | this.insns_count_and_flags.toUInt32())
+    }
+
     // ???? 
     public get extension_preheader(): number {
         return this.insns_count_and_flags.shl(kInsnsSizeShift).toUInt32()
     }
 
+    public get header_start(): NativePointer {
+        return this.CurrentHandle
+    }
+
+    public get header_size(): number {
+        return this.insns_.sub(this.CurrentHandle).toUInt32()
+    }
+
+    public get insns_start(): NativePointer {
+        return this.insns_
+    }
+
+    public get insns_size(): number {
+        return this.insns_size_in_code_units * 2
+    }
 }

@@ -1,11 +1,13 @@
+import { JSHandle, JSHandleNotImpl } from "../../../JSHandle"
 import { StdString } from "../../../../tools/StdString"
-import { JSHandle } from "../../../JSHandle"
 import { callSym, getSym } from "../../../Utils/SymHelper"
+import { Opcode } from "./Instrumentation/InstructionList"
 import { DexFile } from "./dexfile/DexFile"
+import { assert } from "console"
 
 const DEBUG_LOG: boolean = false
 
-export class ArtInstruction extends JSHandle {
+export class ArtInstruction extends JSHandleNotImpl {
 
     constructor(handle: NativePointer) {
         super(handle)
@@ -21,11 +23,11 @@ export class ArtInstruction extends JSHandle {
 
     // _ZN3art11Instruction17kInstructionNamesE
     // static const char* const kInstructionNames[];
-    private static cached_kInstructionNames: String[] = []
-    static get kInstructionNames(): String[] {
+    private static cached_kInstructionNames: string[] = []
+    static get kInstructionNames(): string[] {
         if (ArtInstruction.cached_kInstructionNames.length > 0) return ArtInstruction.cached_kInstructionNames
         const kInstructionNames_ptr: NativePointer = getSym('_ZN3art11Instruction17kInstructionNamesE', 'libdexfile.so', true)
-        let arrary_ret: String[] = []
+        let arrary_ret: string[] = []
         let loopAddaddress: NativePointer = kInstructionNames_ptr
         while (!loopAddaddress.readPointer().isNull()) {
             arrary_ret.push(loopAddaddress.readPointer().readCString())
@@ -122,6 +124,17 @@ export class ArtInstruction extends JSHandle {
         return this.RelativeAt(this.SizeInCodeUnits)
     }
 
+    clone(): ArtInstruction {
+        var tempMemory = Memory.alloc(this.SizeInCodeUnits)
+        Memory.copy(tempMemory, this.handle, this.SizeInCodeUnits)
+        return ArtInstruction.At(tempMemory)
+    }
+
+    // current Address
+    get current(): NativePointer {
+        return this.handle
+    }
+
     get SizeInCodeUnits(): number {
         const opcode: number = this.Fetch16()
         if (DEBUG_LOG) LOGZ(`opcode: ${ptr(opcode)} ${opcode} | ${ArtInstruction.kInstructionDescriptors[opcode]} | ${ArtInstruction.kInstructionNames[opcode]}`)
@@ -140,6 +153,16 @@ export class ArtInstruction extends JSHandle {
 
     get opcode(): number {
         return this.Fetch16()
+    }
+
+    get opName_RunTime(): string {
+        assert(this.opcode < ArtInstruction.kInstructionNames.length, `opcode ${this.opcode} out of range`)
+        return ArtInstruction.kInstructionNames[this.opcode]
+    }
+
+    get opName(): string {
+        assert(this.opcode < ArtInstruction.kInstructionNames.length, `opcode ${this.opcode} out of range`)
+        return Opcode.getOpName(this.opcode)
     }
 
 }
@@ -224,7 +247,7 @@ class Code extends JSHandle {
 //   };
 
 // https://cs.android.com/android/platform/superproject/+/master:art/libdexfile/dex/dex_instruction.h;l=208
-class InstructionDescriptor extends JSHandle {
+class InstructionDescriptor extends JSHandleNotImpl {
 
     // uint32_t verify_flags; 
     verify_flags_ = this.handle
@@ -449,3 +472,5 @@ declare global {
 
 // https://cs.android.com/android/platform/superproject/+/master:art/libdexfile/dex/dex_instruction_list.h;l=21
 globalThis.InstructionGroup = () => { return ArtInstruction.InstructionGroup }
+
+Reflect.set(globalThis, "ArtInstruction", ArtInstruction)
