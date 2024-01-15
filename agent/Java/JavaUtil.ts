@@ -121,7 +121,7 @@ globalThis.findJavaClasses = (keyword: string, depSearch: boolean = false, searc
 
     function enumClasses(loader: Java.Wrapper) {
         (Java.classFactory as any).loader = loader
-        LOGW(`Using loader: ${loader}`)
+        LOGW(`Using loader: ${(Java.classFactory as any).loader}`)
         Java.enumerateLoadedClasses({
             onMatch: function (className) {
                 if (className.includes(keyword)) {

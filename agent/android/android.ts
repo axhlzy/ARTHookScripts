@@ -1,6 +1,9 @@
 // https://github.com/frida/frida-java-bridge/blob/main/lib/android.js
 
 import { parseInstructionsAt } from './machine-code'
+// import Env from 'frida-java-bridge/lib/env'
+// const env :Env= Java.vm.getEnv()
+// env.deleteGlobalRef
 
 const jsizeSize = 4
 const pointerSize = Process.pointerSize

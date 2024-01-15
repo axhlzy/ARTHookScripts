@@ -65,7 +65,8 @@ export class ArtMethod extends JSHandle implements IArtMethod, SizeOfClass {
         entry_point_from_quick_compiled_code_: NativePointer
     }
 
-    constructor(handle: NativePointer) {
+    constructor(handle: NativePointer | number | string) {
+        if (typeof handle == "string") handle = pathToArtMethod(handle).handle
         super(handle)
         try {
             this.ptr_sized_fields_ = {
