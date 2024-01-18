@@ -9,7 +9,7 @@
     "build": "frida-compile agent/main.ts -o _agent.js -c",
     "watch": "frida-compile agent/main.ts -o _agent.js -w",
     "obfuscator": "javascript-obfuscator _agent.js --compact true --self-defending false --unicode-escape-sequence true",
-    "fridaTs" : "tsc --allowJs --declaration node_modules\\frida-java-bridge\\index.js"
+    "fridaTs": "tsc --allowJs --declaration node_modules\\frida-java-bridge\\index.js"
   },
   "devDependencies": {
     "@types/frida-gum": "^16.2.0",
@@ -21,6 +21,7 @@
     "crypto-js": "^4.2.0",
     "dts-gen": "^0.8.1",
     "frida-java-bridge": "^6.2.6",
-    "log4js": "^6.9.1"
+    "log4js": "^6.9.1",
+    "rxjs": "^7.8.1"
   }
 }

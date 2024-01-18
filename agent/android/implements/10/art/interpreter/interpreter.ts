@@ -59,6 +59,7 @@ export class interpreter extends JSHandleNotImpl {
         }
     }
 
+    // _ZN3art11interpreter22MoveToExceptionHandlerEPNS_6ThreadERNS_11ShadowFrameEbb
     // _ZN3art11interpreter22MoveToExceptionHandlerEPNS_6ThreadERNS_11ShadowFrameEPKNS_15instrumentation15InstrumentationE
     // bool MoveToExceptionHandler(art::Thread* self, art::ShadowFrame& shadow_frame, art::instrumentation::Instrumentation const* instrumentation)
     public static Hook_MoveToExceptionHandler() {

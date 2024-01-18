@@ -571,100 +571,100 @@ class ArtMethod_Inl extends ArtMethod {
 
         Interceptor.attach(getSym("_ZN3art9ArtMethod6InvokeEPNS_6ThreadEPjjPNS_6JValueEPKc", "libart.so"), new CModule(`
 
-        #include <stdio.h>
-        #include <glib.h>
-        #include <gum/gumprocess.h>
-        #include <gum/guminterceptor.h>
+            #include <stdio.h>
+            #include <glib.h>
+            #include <gum/gumprocess.h>
+            #include <gum/guminterceptor.h>
 
-        extern void _frida_log(const gchar * message);
+            extern void _frida_log(const gchar * message);
 
-        static void frida_log(const char * format, ...) {
-            gchar * message;
-            va_list args;
-            va_start (args, format);
-            message = g_strdup_vprintf (format, args);
-            va_end (args);
-            _frida_log (message);
-            g_free (message);
-        }
-
-        typedef struct _ArtMethod ArtMethod;
-
-        extern void CalledArtMethod(ArtMethod* artMethod);
-
-        typedef guint8 jboolean;
-        typedef union _StdString StdString;
-        typedef struct _StdStringShort StdStringShort;
-        typedef struct _StdStringLong StdStringLong;
-
-        struct _StdStringShort {
-            guint8 size;
-            gchar data[(3 * sizeof (gpointer)) - sizeof (guint8)];
-        };
-
-        struct _StdStringLong {
-            gsize capacity;
-            gsize size;
-            gchar * data;
-        };
-
-        union _StdString {
-            StdStringShort s;
-            StdStringLong l;
-        };
-        
-        // std::string PrettyMethod(bool with_signature = true)
-        extern void ArtPrettyMethodFunc(StdString * result, ArtMethod * method, jboolean with_signature);
-
-        void(*it)(void* dexFile);
-
-        extern int filterTimes;
-        extern int filterThreadId;
-        extern const char* filterMethodName;
-
-        extern GHashTable *ptrHash;
-
-        gboolean filterMethodCount(void* ptr) {
-            if (ptrHash == NULL) {
-                ptrHash = g_hash_table_new_full(g_direct_hash, g_direct_equal, NULL, NULL);
+            static void frida_log(const char * format, ...) {
+                gchar * message;
+                va_list args;
+                va_start (args, format);
+                message = g_strdup_vprintf (format, args);
+                va_end (args);
+                _frida_log (message);
+                g_free (message);
             }
 
-            guint count = GPOINTER_TO_UINT(g_hash_table_lookup(ptrHash, ptr));
+            typedef struct _ArtMethod ArtMethod;
 
-            if (count >= filterTimes) {
-                // frida_log("Filter PASS (Count >= %d ) -> %p", filterTimes, ptr);
+            extern void CalledArtMethod(ArtMethod* artMethod);
+
+            typedef guint8 jboolean;
+            typedef union _StdString StdString;
+            typedef struct _StdStringShort StdStringShort;
+            typedef struct _StdStringLong StdStringLong;
+
+            struct _StdStringShort {
+                guint8 size;
+                gchar data[(3 * sizeof (gpointer)) - sizeof (guint8)];
+            };
+
+            struct _StdStringLong {
+                gsize capacity;
+                gsize size;
+                gchar * data;
+            };
+
+            union _StdString {
+                StdStringShort s;
+                StdStringLong l;
+            };
+            
+            // std::string PrettyMethod(bool with_signature = true)
+            extern void ArtPrettyMethodFunc(StdString * result, ArtMethod * method, jboolean with_signature);
+
+            void(*it)(void* dexFile);
+
+            extern int filterTimes;
+            extern int filterThreadId;
+            extern const char* filterMethodName;
+
+            extern GHashTable *ptrHash;
+
+            gboolean filterMethodCount(void* ptr) {
+                if (ptrHash == NULL) {
+                    ptrHash = g_hash_table_new_full(g_direct_hash, g_direct_equal, NULL, NULL);
+                }
+
+                guint count = GPOINTER_TO_UINT(g_hash_table_lookup(ptrHash, ptr));
+
+                if (count >= filterTimes) {
+                    // frida_log("Filter PASS (Count >= %d ) -> %p", filterTimes, ptr);
+                    return FALSE;
+                } else {
+                    g_hash_table_insert(ptrHash, ptr, GUINT_TO_POINTER(count + 1));
+                    return TRUE;
+                }
+            }
+
+            gboolean filterThreadIdCount(GumInvocationContext *ctx) {
+                if (-1 == filterThreadId) return TRUE;
+                guint threadid = gum_invocation_context_get_thread_id(ctx);
+                return threadid == filterThreadId;
+            }
+
+            gboolean filterMethodNameCount(ArtMethod* artMethod) {
+                StdString result;
+                ArtPrettyMethodFunc(&result, artMethod, TRUE);
+                const char* methodName = result.l.data;
+                frida_log("methodName -> %s", methodName);
+                if (g_str_has_prefix(methodName, filterMethodName)) {
+                    return TRUE;
+                }
                 return FALSE;
-            } else {
-                g_hash_table_insert(ptrHash, ptr, GUINT_TO_POINTER(count + 1));
-                return TRUE;
             }
-        }
 
-        gboolean filterThreadIdCount(GumInvocationContext *ctx) {
-            if (-1 == filterThreadId) return TRUE;
-            guint threadid = gum_invocation_context_get_thread_id(ctx);
-            return threadid == filterThreadId;
-        }
-
-        gboolean filterMethodNameCount(ArtMethod* artMethod) {
-            StdString result;
-            ArtPrettyMethodFunc(&result, artMethod, TRUE);
-            const char* methodName = result.l.data;
-            frida_log("methodName -> %s", methodName);
-            if (g_str_has_prefix(methodName, filterMethodName)) {
-                return TRUE;
+            void onEnter(GumInvocationContext *ctx) {
+                ArtMethod* artMethod = gum_invocation_context_get_nth_argument(ctx, 0);
+                if (filterMethodCount(artMethod) && filterThreadIdCount(ctx) 
+                    // && filterMethodNameCount(artMethod)
+                ) {
+                    CalledArtMethod(artMethod);
+                }
             }
-            return FALSE;
-        }
-
-        void onEnter(GumInvocationContext *ctx) {
-            ArtMethod* artMethod = gum_invocation_context_get_nth_argument(ctx, 0);
-            if (filterMethodCount(artMethod) && filterThreadIdCount(ctx) 
-                // && filterMethodNameCount(artMethod)
-            ) {
-                CalledArtMethod(artMethod);
-            }
-        }
 
         `, {
             filterTimes: ArtMethod_Inl.filterTimes_ptr,
@@ -677,9 +677,11 @@ class ArtMethod_Inl extends ArtMethod {
             }, 'void', ['pointer']),
             CalledArtMethod: new NativeCallback((artMethod: NativePointer) => {
                 const method: ArtMethod = new ArtMethod(artMethod)
-                // if (method.methodName.includes("com.clash.zombie")) {
-                //     SuspendAll()
-                // }
+                // include in ArtMethod_Inl.includePackage
+                if (!ArtMethod_Inl.includePackage.some((pkg: string) => method.methodName.includes(pkg))) {
+                    // SuspendAll()
+                    return
+                }
                 const msg: string = `Called [${Process.id}|${Process.getCurrentThreadId()}] -> ${method.methodName}`
                 method.methodName == "ERROR" ? LOGE(msg) : LOGD(msg)
             }, 'void', ['pointer'])
@@ -701,6 +703,13 @@ class ArtMethod_Inl extends ArtMethod {
             }
         })
     }
+
+    static includePackage: string[] = [
+        "com.igaworks",
+        "com.hippogames",
+        "com.unity3d",
+        "com.google",
+    ]
 
     static onValueChanged(key: string, value: number | string): void {
         if (key != "filterTimes" && key != "filterThreadId" && key != "filterMethodName") return
