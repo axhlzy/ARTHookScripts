@@ -292,12 +292,14 @@ export class ShadowFrame extends JSHandle {
             let disp_smali: string = ''
             disp_smali += '\t' + sf.vregs.map((vreg, index) => index < ins_size ? `p${index}=${vreg}` : `v${index}=${vreg}`).join(', ') + '\n'
             disp_smali += '\t' + sf.vreg_refs.map((vreg, index) => sf.vregs[index] != 0 ? (index < ins_size ? `p${index}=${vreg.simpleDisp()}` : `v${index}=${vreg.simpleDisp()}`) : "null").join('\n\t') + '\n'
+            LOGZ(disp_smali)
+            disp_smali = `\t---------- smaliLines:${smaliLines} ----------\n`
             while (--counter >= 0 && artInstruction.Next().SizeInCodeUnits > 0) {
                 const offset: NativePointer = artInstruction.handle.sub(thisMethod.DexInstructions().insns)
                 disp_smali += `\t${artInstruction.handle} ${offset} -> ${artInstruction.dumpString(dexfile)}\n`
                 artInstruction = artInstruction.Next()
             }
-            LOGZ(disp_smali.trimEnd())
+            LOGN(disp_smali)
         })
     }
 
