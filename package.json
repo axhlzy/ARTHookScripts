@@ -19,7 +19,7 @@
   },
   "dependencies": {
     "crypto-js": "^4.2.0",
-    "dts-gen": "^0.8.1",
+    "dts-gen": "^0.8.2",
     "frida-java-bridge": "^6.2.6",
     "log4js": "^6.9.1",
     "rxjs": "^7.8.1"
