@@ -2,37 +2,43 @@ import { callSym, getSym } from "../Utils/SymHelper"
 
 type size_t = NativePointer
 
-export class InitArray {
+export class linkerManager {
 
-  static get linkerName(): string {
+  public static get linkerName(): string {
     return Process.arch == "arm" ? "linker" : "linker64"
   }
 
-  static get init_array_linker(): NativePointer[] {
-    const soName: string = InitArray.linkerName
-    const init_array_ptr: NativePointer = Process.findModuleByName(soName)
-      .enumerateSymbols()
-      .filter(s => s.name == ".init_array")
-      .map(s => s.address)[0]
-    let functions = []
-    for (let i = 0; i < 100; i++) {
-      let functionPtr: NativePointer = init_array_ptr.add(i * Process.pointerSize).readPointer()
-      try {
-        functionPtr.readPointer() // Trigger an exception to exit the loop
-      } catch {
-        break
-      }
-      if (functionPtr.isNull()) break
-      functions.push(functionPtr)
+  public static get linkerPath(): string {
+    return Process.findModuleByName(linkerManager.linkerName).path
+  }
+
+  // static inline void call_array(const char* array_name, F* functions, size_t count, bool reverse, const char* realpath)
+  // https://cs.android.com/android/platform/superproject/+/master:bionic/linker/linker_soinfo.cpp;l=485
+  public static get call_array_address(): NativePointer {
+    try {
+      return getSym("__dl__ZL10call_arrayIPFviPPcS1_EEvPKcPT_jbS5_", linkerManager.linkerName)
+    } catch (error) {
+      // LOGE(error)
+      return NULL
     }
-    return functions
+  }
+
+  // static void call_function(const char* function_name, linker_ctor_function_t function, const char* realpath)
+  // ref https://cs.android.com/android/platform/superproject/+/master:bionic/linker/linker_soinfo.cpp;l=460
+  public static get call_function_address(): NativePointer {
+    try {
+      return getSym("__dl__ZL13call_functionPKcPFviPPcS2_ES0_", linkerManager.linkerName)
+    } catch (error) {
+      // LOGE(error)
+      return NULL
+    }
   }
 
   // https://cs.android.com/android/platform/superproject/+/master:bionic/linker/linker_soinfo.cpp;l=698?q=call_constructors&ss=android%2Fplatform%2Fsuperproject
   // __dl__ZNK6soinfo10get_sonameEv
-  private static getSoName(soinfo: NativePointer): string {
+  public static getSoName(soinfo: NativePointer): string {
     return callSym<NativePointer>(
-      "__dl__ZNK6soinfo10get_sonameEv", InitArray.linkerName,
+      "__dl__ZNK6soinfo10get_sonameEv", linkerManager.linkerName,
       'pointer', ['pointer'],
       soinfo).readCString()
   }
@@ -252,30 +258,41 @@ export class InitArray {
     `
   static cm: CModule = null
   static MapMdCalled = new Map<string, number>()
+  static soLoadCallbacks: Map<string, Function[]> = new Map()
+
+  public static addOnSoLoadCallback(soName:string, call:Function) {
+    if (this.soLoadCallbacks.has(soName)) {
+      this.soLoadCallbacks.get(soName).push(call)
+    } else {
+      this.soLoadCallbacks.set(soName, [call])
+    } 
+  }
 
   // https://cs.android.com/android/platform/superproject/+/master:bionic/linker/linker_soinfo.cpp;l=513
   // __dl__ZN6soinfo17call_constructorsEv
-  static Hook_CallConstructors(maxDisplayCount: number = 10, showFiniArray: boolean = true, simMdShowOnce: boolean = true) {
+  public static Hook_CallConstructors(maxDisplayCount: number = 10, showFiniArray: boolean = true, simMdShowOnce: boolean = true) {
     if (Process.arch == "arm") {
-      InitArray.cm_code = InitArray.cm_include + "#define __work_around_b_24465209__ 1" + InitArray.cm_code
+      linkerManager.cm_code = linkerManager.cm_include + "#define __work_around_b_24465209__ 1" + linkerManager.cm_code
     } else {
-      InitArray.cm_code = InitArray.cm_include + "#define __LP64__ 1" + InitArray.cm_code
+      linkerManager.cm_code = linkerManager.cm_include + "#define __LP64__ 1" + linkerManager.cm_code
     }
-    InitArray.cm = new CModule(InitArray.cm_code, {
-      get_soName: getSym("__dl__ZNK6soinfo10get_sonameEv", InitArray.linkerName),
+    linkerManager.cm = new CModule(linkerManager.cm_code, {
+      get_soName: getSym("__dl__ZNK6soinfo10get_sonameEv", linkerManager.linkerName),
       onEnter_call_constructors: new NativeCallback((_ctx: CpuContext, _si: NativePointer, soName: NativePointer, init_array: NativePointer, init_array_count: number, fini_array: NativePointer, fini_array_count: number) => {
-        const soNameStr: string = soName.readCString()
+        const str_soName: string = soName.readCString()
+        const md = Process.findModuleByName(str_soName)
+        if (this.soLoadCallbacks.has(str_soName)) this.soLoadCallbacks.get(str_soName).forEach(call=>call(md))
         if (simMdShowOnce) {
-          if (InitArray.MapMdCalled.has(soNameStr)) {
-            let count: number = InitArray.MapMdCalled.get(soNameStr)!
+          if (linkerManager.MapMdCalled.has(str_soName)) {
+            let count: number = linkerManager.MapMdCalled.get(str_soName)!
             count++
-            InitArray.MapMdCalled.set(soNameStr, count)
+            linkerManager.MapMdCalled.set(str_soName, count)
             return
           } else {
-            InitArray.MapMdCalled.set(soNameStr, 1)
+            linkerManager.MapMdCalled.set(str_soName, 1)
           }
         }
-        LOGD(`call_constructors soName: ${soNameStr} `)
+        LOGD(`call_constructors soName: ${str_soName} `)
         if (init_array_count != 0) {
           LOGD(`\tinit_array: ${init_array} | init_array_count: ${init_array_count}`)
           let detail: string = ''
@@ -311,18 +328,19 @@ export class InitArray {
         LOGO(`\n-----------------------------------------------------------\n`)
       }, 'void', ['pointer', 'pointer', 'pointer', 'pointer', 'int', 'pointer', 'int'])
     })
-    Interceptor.attach(getSym("__dl__ZN6soinfo17call_constructorsEv", InitArray.linkerName), InitArray.cm as NativeInvocationListenerCallbacks)
+    Interceptor.attach(getSym("__dl__ZN6soinfo17call_constructorsEv", linkerManager.linkerName),
+      linkerManager.cm as NativeInvocationListenerCallbacks)
   }
 
-  static get_init_array_count(soinfo: NativePointer): size_t {
-    const func = new NativeFunction(InitArray.cm.get_init_array_count, 'pointer', ['pointer'])
+  public static get_init_array_count(soinfo: NativePointer): size_t {
+    const func = new NativeFunction(linkerManager.cm.get_init_array_count, 'pointer', ['pointer'])
     return func(soinfo) as size_t
   }
 
-  static get_init_array(soinfo: NativePointer): NativePointer[] {
-    const func = new NativeFunction(InitArray.cm.get_init_array, 'pointer', ['pointer'])
+  public static get_init_array(soinfo: NativePointer): NativePointer[] {
+    const func = new NativeFunction(linkerManager.cm.get_init_array, 'pointer', ['pointer'])
     const start: NativePointer = func(soinfo) as NativePointer
-    const count: number = InitArray.get_init_array_count(soinfo).toUInt32()
+    const count: number = linkerManager.get_init_array_count(soinfo).toUInt32()
     const result: NativePointer[] = []
     for (let i = 0; i < count; i++) {
       result.push(start.add(i * Process.pointerSize).readPointer())
@@ -330,15 +348,15 @@ export class InitArray {
     return result
   }
 
-  static get_fini_array_count(soinfo: NativePointer): size_t {
-    const func = new NativeFunction(InitArray.cm.get_fini_array_count, 'pointer', ['pointer'])
+  public static get_fini_array_count(soinfo: NativePointer): size_t {
+    const func = new NativeFunction(linkerManager.cm.get_fini_array_count, 'pointer', ['pointer'])
     return func(soinfo) as size_t
   }
 
-  static get_fini_array(soinfo: NativePointer): NativePointer[] {
-    const func = new NativeFunction(InitArray.cm.get_fini_array, 'pointer', ['pointer'])
+  public static get_fini_array(soinfo: NativePointer): NativePointer[] {
+    const func = new NativeFunction(linkerManager.cm.get_fini_array, 'pointer', ['pointer'])
     const start: NativePointer = func(soinfo) as NativePointer
-    const count: number = InitArray.get_fini_array_count(soinfo).toUInt32()
+    const count: number = linkerManager.get_fini_array_count(soinfo).toUInt32()
     const result: NativePointer[] = []
     for (let i = 0; i < count; i++) {
       result.push(start.add(i * Process.pointerSize).readPointer())
@@ -346,9 +364,16 @@ export class InitArray {
     return result
   }
 }
+
+globalThis.linkerName = linkerManager.linkerName
+globalThis.linkerPath = linkerManager.linkerPath
+globalThis.call_array_address = linkerManager.call_array_address
+globalThis.call_function_address = linkerManager.call_function_address
+ 
 
 declare global {
-  var init_array_linker: NativePointer[]
+  var linkerName: string
+  var linkerPath: string
+  var call_array_address: NativePointer
+  var call_function_address: NativePointer
 }
-
-globalThis.init_array_linker = InitArray.init_array_linker

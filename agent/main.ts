@@ -5,6 +5,10 @@ import { hookJavaClass } from "./android/Utils/JavaHooker"
 
 globalThis.testArtMethod = () => {
 
+    // Java.perform(()=>{
+    //     console.log(Java.openClassFile("/data/local/tmp/dex_androidx.dex"))
+    // })
+    
     Java.perform(() => {
 
         let method: ArtMethod = pathToArtMethod("com.unity3d.player.UnityPlayer.UnitySendMessage")

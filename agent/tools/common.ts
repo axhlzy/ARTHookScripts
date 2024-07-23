@@ -1,3 +1,5 @@
+export const DEBUG :boolean = false
+
 globalThis.clear = () => console.log('\x1Bc')
 
 globalThis.cls = () => clear()
@@ -109,6 +111,18 @@ class globalValueStore {
     //     KeyValueStore.getInstance<string, InvocationListener[]>().update('Interceptors', value)
     // }
 
+}
+
+var arrayMap = new Map()
+export const filterDuplicateOBJ = (objstr: string | String, maxCount: number = 10) => {
+    if (arrayMap.has(objstr)) {
+        arrayMap.set(objstr, arrayMap.get(objstr) + 1)
+        if (arrayMap.get(objstr) > maxCount) {
+            arrayMap.delete(objstr)
+            return false
+        }
+    } else arrayMap.set(objstr, 1)
+    return true
 }
 
 setImmediate(() => {

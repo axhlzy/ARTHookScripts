@@ -104,11 +104,14 @@ setImmediate(() => {
 })
 
 setImmediate(() => {
-    interpreter.Hook_CanUseMterp() // by defult
-    // interpreter.Hook_AbortTransaction()
-    // interpreter.Hook_AbortTransactionV()
-    interpreter.Hook_MoveToExceptionHandler() // by defult
-
+    try {
+        interpreter.Hook_CanUseMterp() // by defult
+        // interpreter.Hook_AbortTransaction()
+        // interpreter.Hook_AbortTransactionV()
+        interpreter.Hook_MoveToExceptionHandler() // by defult
+    } catch (error) {
+        // LOGE(error)
+    }
 })
 
 Reflect.set(globalThis, "ArtInterpreter", interpreter)

@@ -3,5 +3,7 @@ import './DefineClass'
 import './SymbolManager'
 import './DefineClass'
 import './OpenCommon'
-import './init_array'
+import './LinkerManager'
 import './ExecuteSwitchImplCpp'
+
+import './dlopen'

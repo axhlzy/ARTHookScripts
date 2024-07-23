@@ -1,3 +1,6 @@
+import { DEBUG } from "../../tools/common"
+import { LOGW } from "../../tools/logger"
+
 export class SymbolManager {
 
     static get artModule(): Module {
@@ -62,7 +65,7 @@ export class SymbolManager {
         })
         if (ret.length == 0) if (withError) throw new Error("can not find symbol")
         if (ret.length > 1) {
-            LOGW(`find too many symbol, just ret first | size : ${ret.length}`)
+            if (DEBUG) LOGW(`find too many symbol, just ret first | size : ${ret.length}`)
             if (ret.length < 5) {
                 ret.forEach((item: ModuleSymbolDetails) => {
                     LOGZ(JSON.stringify(item))
@@ -71,5 +74,4 @@ export class SymbolManager {
         }
         return ret[0]
     }
-
 }

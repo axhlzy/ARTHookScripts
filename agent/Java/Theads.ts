@@ -149,14 +149,6 @@ globalThis.currentThreadName = (): string => {
     return getThreadName(tid).toString()
 }
 
-// raise 以后当前进程所有线程都被暂停了，所以只能使用gdb llvm 或者是使用其他的方式(adb)恢复
-// ps1 -> adb shell kill -SIGSTOP $(adb shell pidof com.xxx.xxx)
-// ps1 -> adb shell kill -SIGCONT $(adb shell pidof com.xxx.xxx)
-globalThis.raise = (sign: SIGNAL = SIGNAL.SIGSTOP): number => {
-    const raise = new NativeFunction(Module.findExportByName("libc.so", 'raise')!, 'int', ['int'])
-    return raise(sign) as number
-}
-
 globalThis.listThreads = (maxCountThreads: number = 20) => {
     let index_threads: number = 0
     let current = Process.getCurrentThreadId()

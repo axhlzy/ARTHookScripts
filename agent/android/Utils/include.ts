@@ -1,3 +1,6 @@
 import './ArtMethodHelper'
 import './SymHelper'
 import './JavaHooker'
+import './libcfuncs'
+import './ThreadHooker'
+import './syscalls'

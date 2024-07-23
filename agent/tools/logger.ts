@@ -148,6 +148,7 @@ declare global {
     var logcat: (fmt: string, msg: string, tag?: string) => void
 }
 
+export const LOGW = Logger.LOGW
 globalThis.LOG = Logger.LOG
 globalThis.LOGW = Logger.LOGW
 globalThis.LOGE = Logger.LOGE
