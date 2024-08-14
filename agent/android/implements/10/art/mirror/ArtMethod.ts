@@ -520,18 +520,20 @@ export class ArtMethod extends JSHandle implements IArtMethod, SizeOfClass {
         newLine()
     }
 
-    showOatAsm(num: number = 20, info: boolean = false) {
+    showOatAsm(num: number = -1, info: boolean = false) {
         newLine()
         if (info) LOGD(`👉 ${this}\n`)
         LOGD(this.methodName)
+        const debugSymbol = DebugSymbol.fromAddress(this.data)
+        LOGZ(`[ ${debugSymbol} ]`)
         newLine()
 
         // 暂时无法去确定asm的结束位置
-        let insns: Instruction = Instruction.parse(this.entry_point_from_quick_compiled_code)
+        let insns: Instruction = Instruction.parse(this.data)
         let num_local: number = 0
         let code_offset: number = 0
         let errorFlag: boolean = false
-        while (++num_local < num) {
+        while (++num_local < (num == -1 ? 20 : getSymSize(debugSymbol))) {
             let indexStr: string = `[${num_local.toString().padStart(4, ' ')}|${ptr(code_offset).toString().padEnd(5, ' ')}]`
             !errorFlag ? LOGD(`${indexStr} ${insns.address}\t${insns.toString()}`) : function () {
                 const bt: ArrayBuffer = insns.address.readByteArray(4)
@@ -551,6 +553,14 @@ export class ArtMethod extends JSHandle implements IArtMethod, SizeOfClass {
             // 解析出更多信息后是不是可以考虑在进入这个函数的时候判断当前函数是否已经被oat然后决定实现javahook的方式直接去hook已经编译好的oat文件
         }
         newLine()
+
+        function getSymSize(debugSymbol:DebugSymbol){
+            return 20
+            if (debugSymbol.name != null) {
+                // todo
+                // 使用 CMoudle 来解析 elf dynamic段，遍历符号并取得符号长度并返回
+            }
+        }
     }
 
     public forEachSmali = (callback: (instruction: ArtInstruction, codeitem: DexItemStruct) => void): void => forEachSmali_static.bind(this)(this, callback)

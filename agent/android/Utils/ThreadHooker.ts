@@ -4,20 +4,44 @@ export const hookThread = () => {
 
     LOGW(`MAIN Thread ID : ${Process.id}`)
 
+    // ref : https://www.cnblogs.com/revercc/p/18157194
+    // ref : http://xrefandroid.com/android-12.0.0_r34/xref/bionic/libc/bionic/pthread_create.cpp#380
     // int pthread_create(pthread_t* __pthread_ptr, pthread_attr_t const* __attr, void* (* __start_routine)(void*), void* __data);
     const addr_pthread_create = Module.findExportByName("libc.so", "pthread_create")
     const func_pthread_create = new NativeFunction(addr_pthread_create, "int", ["pointer", "pointer", "pointer", "pointer"])
     Interceptor.attach(addr_pthread_create, {
         onEnter: function (args) {
             const __pthread_ptr: pthread_t = args[0]
+            this.__pthread_ptr = __pthread_ptr
             const __attr: pthread_attr_t = new pthread_attr_t(args[1])
+            this.__attr = __attr
             const __start_routine = new NativeFunction(args[2], "pointer", ["pointer"])
+            this.__start_routine = __start_routine
             const __debugInfo = __start_routine.isNull() ? 'NULL' : DebugSymbol.fromAddress(__start_routine)
+            this.__debugInfo = __debugInfo
             const __data = args[3]
-            LOGD(`pthread_create: __pthread_ptr=${__pthread_ptr}, __attr=${__attr}, __start_routine=${__debugInfo} @ ${__start_routine}, __data=${__data}`)
-            PrintStackTraceNative(this.context, '\t')
+            this.__data = __data
+        }, onLeave: function () {
+            try {
+                const pid: number = libC.getpid()
+                let pid_des: string = `${pid}`
+                try {
+                    pid_des += ` [ ${getThreadName(pid)} ] `
+                } catch { }
+                const pid_target: number = this.__pthread_ptr.readPointer().add(0x10).readU32()
+                let pid_target_des: string = `${pid_target}`
+                try {
+                    pid_target_des += ` [ ${getThreadName(pid_target)} ] `
+                } catch { }
+                LOGW(`\ntid : ${pid_des} -> ${pid_target_des}`)
+                LOGD(`pthread_create:\n\t__pthread_ptr=${this.__pthread_ptr}\n\t__attr=${this.__attr}\n\t__start_routine=${this.__debugInfo} @ ${this.__start_routine}\n\t__data=${this.__data}`)
+                PrintStackTraceNative(this.context, '\t')
+            } catch (e) {
+            }
         }
     })
+
+    return
 
     // int pthread_setname_np(pthread_t __pthread, const char* _Nonnull __name);
     const addr_pthread_setname_np = Module.findExportByName("libc.so", "pthread_setname_np")
@@ -132,7 +156,7 @@ function getThreadName(tid: number = libC.gettid()) {
     return threadName
 }
 
-export const PrintStackTraceNative = (ctx: CpuContext, pandingStart: string = '', fuzzy: boolean = false,demangle: boolean = false, retText: boolean = false, slice: number = 6): string | void => {
+export const PrintStackTraceNative = (ctx: CpuContext, pandingStart: string = '', fuzzy: boolean = false, demangle: boolean = false, retText: boolean = false, slice: number = 6): string | void => {
     const stacks: NativePointer[] = Thread.backtrace(ctx, fuzzy ? Backtracer.FUZZY : Backtracer.ACCURATE)
     const tmpText: string = stacks
         .slice(0, slice)

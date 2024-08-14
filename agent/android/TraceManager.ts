@@ -68,36 +68,32 @@ export class TraceManager {
             LOGE(`TYPE:${exception.type} | NCONTEXT: ${exception.nativeContext} | ADDRESS: ${exception.address} { ${DebugSymbol.fromAddress(exception.address)} }`)
             PrintStackTraceNative(exception.context, '', false, true)
         })
-    
-        // libart.so!_ZN3art3JNIILb0EE18CallBooleanMethodVEP7_JNIEnvP8_jobjectP10_jmethodIDSt9__va_list+0xc4
-        Interceptor.attach(getSym("_ZN3art3JNIILb0EE18CallBooleanMethodVEP7_JNIEnvP8_jobjectP10_jmethodIDSt9__va_list","libart.so"), {
-            onEnter(args) {
-                // libart.so!art::JNI<false>::CallBooleanMethodV(_JNIEnv*, _jobject*, _jmethodID*, std::__va_list)
-                LOGD(`art::JNI<false>::CallBooleanMethodV( _JNIEnv:${args[0]}, _jobject:${args[1]}, _jmethodID:${args[2]}, __va_list:${args[3]})`)
-                LOGZ(`\t_jobject -> ${Java.cast(args[1], Java.use("java.lang.Object"))}`)
-                LOGZ(`\t_jmethodID -> ${Java.cast(args[2], Java.use("java.lang.Object"))}`)
-            }
-        })
-
-        // _ZN7_JNIEnv16CallObjectMethodEP8_jobjectP10_jmethodIDz
-        // jobject     (*CallObjectMethod)(JNIEnv*, jobject, jmethodID, ...);
-        Interceptor.attach(getSym("_ZN7_JNIEnv16CallObjectMethodEP8_jobjectP10_jmethodIDz","libart.so"), {
-            onEnter(args) {
-                LOGD(`_ZN7_JNIEnv16CallObjectMethodEP8_jobjectP10_jmethodIDz`)
-                LOGZ(`\t_jobject -> ${Java.cast(args[0], Java.use("java.lang.Object"))}`)
-                LOGZ(`\t_jmethodID -> ${Java.cast(args[1], Java.use("java.lang.Object"))}`)
-            }
-        })
-    
     }
 }
-
 
 // LOGD(Process.id)
 // libC.sleep(15)
 // hookThread()
 
 setImmediate(() => {
+
+    // logSoLoad()
+    // hookThread()
+
+    // const addr = Module.findBaseAddress("libJX3_Client.so").add(0x166CEE4)
+    // Memory.patchCode(addr, Process.pointerSize, (address)=>{
+    //     const w = new Arm64Writer(address)
+    //     w.putNop()
+    //     w.flush()
+    // })
+
+    Process.setExceptionHandler((exception: ExceptionDetails) => {
+        LOGE(`\nCatch Exception:\nTYPE:${exception.type} | NCONTEXT: ${exception.nativeContext} | ADDRESS: ${exception.address} { ${DebugSymbol.fromAddress(exception.address)} }`)
+        PrintStackTraceNative(exception.context, '', false, true)
+        return true
+    })
+
+    // Module.load("/data/local/tmp/libinject.so")
     
     // TraceManager.TraceException()
 
