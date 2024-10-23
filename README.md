@@ -9,14 +9,22 @@ BUILD_ID=QP1A.191005.007.A3
 
 根据artmethod指针去得到与之关联的dex源文件，解析dex文件，获取该方法的smali字节码，根据上述打印的代码信息来进行进一步的操作
 
-👇 目前考虑的三种大概可行的smali inline trace方式 👇
+👇 目前考虑的四种大概可行的smali inline trace方式 👇
 
-1. Use Trace Function 😕
+0. Use JDB 😀
+
+   REF: [jvmti doc](https://docs.oracle.com/javase/8/docs/platform/jvmti/jvmti.html) | 
+   REF: [android source jvmti.h](https://cs.android.com/android/platform/superproject/main/+/main:art/openjdkjvmti/include/jvmti.h;l=1002) | 
+   REF: [frida jvmti](https://github.com/frida/frida-java-bridge/blob/a3b0de51451dd38e9dfcbaa1fbc744745bab9579/lib/jvmti.js) | 
+   REF: [how to start jdwp thread](https://github.com/axhlzy/Il2CppHookScripts/blob/fe5ea00c7930135246b37333d63c21786c3fe82b/Il2cppHook/agent/plugin/jdwp/jdwp.ts#L257) |
+   REF: [jdwp protocol](https://github.com/IOActive/jdwp-shellifier)
+
+2. Use Trace Function 😕
 
    通过符号以及指令格式的模式匹配定位一些关键的trace函数 
    参考源码 [trace.h](https://android.googlesource.com/platform/art/+/refs/tags/android-10.0.0_r42/runtime/trace.h#107)
 
-2. Inline Hook Smali 😕
+3. Inline Hook Smali 😕
 
    - 解释执行
      
@@ -26,10 +34,10 @@ BUILD_ID=QP1A.191005.007.A3
      
       主要工作在于需要解析oat后二进制的符号信息，dump汇编的时候可用借此增加二进制的可读性，至于二进制可行性格式的inlinehook就很普通了
 
-3. 自定义smali解释器
+4. 自定义smali解释器
   具体的实现可以参考 [vmInterpret](https://github.com/maoabc/nmmp/blob/master/nmmvm/nmmvm/src/main/cpp/vm/InterpC-portable.cpp#L1065C17-L1065C18)，或者把它移植过来，像qbdi那样导出一些函数用作frida bridge，完全代理系统原有的art smali解释器以获得最佳的流程控制能力以及跨不同版本的安卓代码兼容性
 
-4. node调试执行
+5. node调试执行
    简单的想法是按照frida官网文档中关于调试js/ts的流程为关键js函数下断点 (--runtime=v8 --debug)，但是如果我们使用Intercpter.attach以后，断点下在onEnter或者onLeave中，即实现了类似于调试器断点的感觉，这里涉及到另一个问题，如何像lldb一样进行单步调试，我的想法大致分为两种：
    
    ① 使用 [stalker](https://frida.re/docs/stalker/) CP原汇编并执行
