@@ -79,7 +79,7 @@ export class ExecuteSwitchImplCppManager {
                     if (!ctx.shadow_frame.method.methodName.includes(ExecuteSwitchImplCppManager.filterMethodName)) return
 
                     // LOGD(ctx.shadow_frame)
-                    ctx.shadow_frame.printBackTraceWithSmali()
+                    // ctx.shadow_frame.printBackTraceWithSmali()
 
                     if (ExecuteSwitchImplCppManager.filterThreadId != -1 && ExecuteSwitchImplCppManager.filterThreadId != Process.getCurrentThreadId()) {
 
@@ -104,7 +104,7 @@ export class ExecuteSwitchImplCppManager {
 
                     // LOGD(ctx.shadow_frame)
                     // LOGD(ctx.result_register)
-                    newLine()
+                    // newLine()
                 }
             })
 

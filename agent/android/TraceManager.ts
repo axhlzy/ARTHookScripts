@@ -124,5 +124,4 @@ setImmediate(() => {
     // TraceManager.Trace_ExecuteSwitchImplCpp()
     // TraceManager.Trace_OpenCommon()
     // TraceManager.Trace_CallConstructors()
-
 })
