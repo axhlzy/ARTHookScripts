@@ -183,8 +183,24 @@ export class ArtMethod extends JSHandle implements IArtMethod, SizeOfClass {
         disp += `\n\t method_index: ${this.method_index_} | ${ptr(this.method_index)}`
         disp += `\n\t hotness_count: ${this.hotness_count_} | ${ptr(this.hotness_count)}`
         disp += `\n\t imt_index: ${this.imt_index_} | ${ptr(this.imt_index)}`
-        disp += `\n\t data: ${this.ptr_sized_fields_.data_} -> ${DebugSymbol.fromAddress(this.data).toString()}`
-        disp += `\n\t jniCode: ${this.ptr_sized_fields_.entry_point_from_quick_compiled_code_}  -> ${DebugSymbol.fromAddress(this.entry_point_from_quick_compiled_code).toString()}`
+        try {
+            let debugSymbol = DebugSymbol.fromAddress(this.data)
+            let md = Process.findModuleByAddress(this.data)
+            if (md == null || md.base == null || debugSymbol == null) throw new Error()
+            let rela =  this.data.sub(md.base)
+            disp += `\n\t data: ${this.data} -> ${rela} | ${debugSymbol.toString()}`
+        } catch (error) {
+            disp += `\n\t data: ${this.ptr_sized_fields_.data_} -> ${DebugSymbol.fromAddress(this.data).toString()}`
+        }
+        try {
+            let debugSymbol = DebugSymbol.fromAddress(this.entry_point_from_quick_compiled_code)
+            let md = Process.findModuleByAddress(this.entry_point_from_quick_compiled_code)
+            if (md == null || md.base == null || debugSymbol == null) throw new Error()
+            let rela =  this.entry_point_from_quick_compiled_code.sub(md.base)
+            disp += `\n\t jniCode: ${this.entry_point_from_quick_compiled_code} -> ${rela} | ${debugSymbol.toString()}`
+        } catch (error) {
+            disp += `\n\t jniCode: ${this.ptr_sized_fields_.entry_point_from_quick_compiled_code_}  -> ${DebugSymbol.fromAddress(this.entry_point_from_quick_compiled_code).toString()}`
+        }
         return disp
     }
 
@@ -470,8 +486,32 @@ export class ArtMethod extends JSHandle implements IArtMethod, SizeOfClass {
     }
 
     showCode = (num?: number) => {
-        const debugInfo: DebugSymbol = DebugSymbol.fromAddress(this.entry_point_from_quick_compiled_code)
-        debugInfo.moduleName == "base.odex" ? this.showOatAsm(num) : this.showSmali(num)
+        const dbg_epcode: DebugSymbol = DebugSymbol.fromAddress(this.entry_point_from_quick_compiled_code)
+        const dbg_data: DebugSymbol = DebugSymbol.fromAddress(this.data)
+        if (dbg_epcode.toString().includes("libart.so!art_quick_generic_jni_trampoline")) {
+            this.showAsm(num)
+        } else if (dbg_data.toString().includes("base.odex")) {
+            this.showOatAsm(num)
+        } else {
+            dbg_epcode.moduleName == "base.odex" ? this.showOatAsm(num) : this.showSmali(num)
+        }
+    }
+
+    showAsm(num: number = 10, info: boolean = false,) {
+        newLine()
+        if (info) LOGD(`👉 ${this}\n`)
+        LOGD(this.methodName)
+        const debugSymbol = DebugSymbol.fromAddress(this.data)
+        LOGZ(`[ ${debugSymbol} ]`)
+        newLine()
+        LOGW(`Showing ASM with num: ${num}\n`)
+        let md = Process.findModuleByAddress(this.data)
+        let insns = Instruction.parse(this.data)
+        for (let i = 0; i < num; i++) {
+            LOGD(`${insns.address} | ${insns.address.sub(md.base)}  ${insns.toString()}`)
+            insns = Instruction.parse(insns.next)
+        }
+        newLine()
     }
 
     showSmali(num: number = -1, info: boolean = false, /** Forced withdrawal */ forceRet: number = 100): void {

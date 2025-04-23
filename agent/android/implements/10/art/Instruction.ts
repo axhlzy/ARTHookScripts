@@ -41,19 +41,24 @@ export class ArtInstruction extends JSHandleNotImpl {
     // static const InstructionDescriptor kInstructionDescriptors[];
     private static cached_kInstructionDescriptors: InstructionDescriptor[] = []
     static get kInstructionDescriptors(): InstructionDescriptor[] {
-        if (ArtInstruction.cached_kInstructionDescriptors.length > 0) return ArtInstruction.cached_kInstructionDescriptors
-        const kInstructionDescriptors_ptr = getSym('_ZN3art11Instruction23kInstructionDescriptorsE', 'libdexfile.so', true)
-        const arrary_ret: InstructionDescriptor[] = []
-        let loopAddaddress: NativePointer = kInstructionDescriptors_ptr
-        let counter = 0xFF // 256
-        if (DEBUG_LOG) var index = 0
-        while (counter-- > 0) {
-            arrary_ret.push(new InstructionDescriptor(loopAddaddress))
-            if (DEBUG_LOG) LOGZ(`${++index} ${new InstructionDescriptor(loopAddaddress)}`)
-            loopAddaddress = loopAddaddress.add(InstructionDescriptor.SizeOfClass)
+        try {
+            if (ArtInstruction.cached_kInstructionDescriptors.length > 0) return ArtInstruction.cached_kInstructionDescriptors
+            // Process.findModuleByName("libdexfile.so").enumerateSymbols().filter(md=>{md.name.includes("InstructionDescriptors") }).forEach(md=>console.log(md.name)) 高版本安卓没有这个符号
+            const kInstructionDescriptors_ptr = getSym('_ZN3art11Instruction23kInstructionDescriptorsE', 'libdexfile.so', true)
+            const arrary_ret: InstructionDescriptor[] = []
+            let loopAddaddress: NativePointer = kInstructionDescriptors_ptr
+            let counter = 0xFF // 256
+            if (DEBUG_LOG) var index = 0
+            while (counter-- > 0) {
+                arrary_ret.push(new InstructionDescriptor(loopAddaddress))
+                if (DEBUG_LOG) LOGZ(`${++index} ${new InstructionDescriptor(loopAddaddress)}`)
+                loopAddaddress = loopAddaddress.add(InstructionDescriptor.SizeOfClass)
+            }
+            ArtInstruction.cached_kInstructionDescriptors = new Array(...arrary_ret)
+            return arrary_ret
+        } catch (error) {
+            LOGE(`NOT SUPPORT ANDROID VERSION \n${error}`)
         }
-        ArtInstruction.cached_kInstructionDescriptors = new Array(...arrary_ret)
-        return arrary_ret
     }
 
     // https://cs.android.com/android/platform/superproject/+/master:art/libdexfile/dex/dex_instruction.h;l=689

@@ -87,12 +87,6 @@ setImmediate(() => {
     //     w.flush()
     // })
 
-    Process.setExceptionHandler((exception: ExceptionDetails) => {
-        LOGE(`\nCatch Exception:\nTYPE:${exception.type} | NCONTEXT: ${exception.nativeContext} | ADDRESS: ${exception.address} { ${DebugSymbol.fromAddress(exception.address)} }`)
-        PrintStackTraceNative(exception.context, '', false, true)
-        return true
-    })
-
     // Module.load("/data/local/tmp/libinject.so")
     
     // TraceManager.TraceException()
