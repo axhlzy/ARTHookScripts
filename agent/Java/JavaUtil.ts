@@ -156,6 +156,8 @@ globalThis.listJavaMethods = (className: string | number = "com.unity3d.player.U
     }
 }
 
+globalThis.m = globalThis.listJavaMethods
+
 // current classloader
 globalThis.enumClassesList = (ret: boolean = false) => {
     let countClasses: number = -1
@@ -243,10 +245,50 @@ globalThis.chooseClasses = (className: string | number, retArray: boolean = fals
     if (retArray) return ret
 }
 
+globalThis.listFieldsInstance = (className: string | number, hex?:string) => {
+    let classNameLocal: string = checkNumParam(className)
+    let countFields: number = -1
+    newLine()
+    Java.perform(() => {
+        try {
+            Java.choose(classNameLocal, {
+                onMatch: function (instance) {
+                    if (hex != undefined &&  hex.includes("0x") && `${instance}`.includes(hex)) {
+                        LOGD(`\n[${++countFields}] ${instance}`)
+                        let index = 0
+                        for (let field in instance) {
+                            if (`${instance[field]}`.includes("Java.Field"))
+                            LOGD(`[${++index}] ${field} : ${instance[field]}`)
+                        }
+                        return "stop"
+                    } else {
+                        LOGD(`\n[${++countFields}] ${instance}`)
+                        let index = 0
+                        for (let field in instance) {
+                            if (`${instance[field]}`.includes("Java.Field"))
+                            LOGD(`[${++index}] ${field} : ${instance[field]}`)
+                        }
+                    }
+                },
+                onComplete: function () {
+                    LOGZ(`\nTotal instance: ${countFields + 1}\n`)
+                }
+            })
+        }catch (error) {
+            // LOGE(error)
+        }
+    })
+}
+
+globalThis.lfs = globalThis.listFieldsInstance
+
 declare global {
     var listJavaMethods: (className: string | number, simple?: boolean, showSmali?: boolean) => void
+    var m: (className: string | number) => void // alias of listJavaMethods
     var enumClassesList: (ret?: boolean) => void | Array<string>
     var findJavaClasses: (keyword: string, depSearch?: boolean, searchInstance?: boolean) => void
     var chooseClasses: (className: string | number, retArray?: boolean) => void | any[]
     var filterJavaMethods: (methodNameFilter: string, className: string | number | undefined) => void
+    var listFieldsInstance: (className: string | number) => void
+    var lfs : (className: string | number) => void // alias of listFieldsInstance
 }

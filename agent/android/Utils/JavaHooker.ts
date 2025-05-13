@@ -9,6 +9,32 @@ export interface MethodCallback {
     (methodName: string, methodSignature: string, args: IArguments): HookOptions | void
 }
 
+// 如果app本来使用到了gson 就直接用
+// 否则就加载gson.dex，如果还是没有就不做解析
+var useGson = false
+// Java.perform(() => {
+//     if (Java.available) {
+//         useGson = testGson() || loadGson()
+//         function testGson() {
+//             try {
+//                 Java.use("com.google.gson.Gson")
+//                 return true
+//             } catch (e) {
+//                 return false
+//             }
+//         }
+
+//         function loadGson() {
+//             try {
+//                 Java.openClassFile("/data/local/tmp/gson.dex").load()
+//                 return testGson()
+//             } catch (e) {
+//                 return false
+//             }
+//         }
+//     }
+// })
+
 /**
  * @example
  * hookJavaClass("com.unity3d.player.UnityWebRequest", null, ['uploadCallback'])
@@ -67,12 +93,31 @@ export function hookJavaClass(className: string | Java.Wrapper, callback?: Metho
 
                         if (hookOptions.parseValue) {
                             let fullMethodName = `${className}.${methodName}`
-                            const args_str: string = arguments.length == 0 ? '' : Array.prototype.slice.call(arguments).map(String).join("','")
-                            if (returnValue) {
-                                LOGD(`${fullMethodName}(\x1b[96m'${args_str}'\x1b[0m) => \x1b[93m${returnValue}\x1b[0m`)
+                            if (useGson) {
+                                const Gson = Java.use("com.google.gson.Gson")
+                                const gson = Gson.$new()
+                                let args_str: string = arguments.length == 0 ? '' : Array.prototype.slice.call(arguments).map((arg: any) => {
+                                    const json = gson.toJson(arg)
+                                    return json
+                                }).join("','")
+                                if (returnValue) {
+                                    if (useGson) {
+                                        const json = gson.toJson(returnValue)
+                                        LOGD(`${fullMethodName}(\x1b[96m'${args_str}'\x1b[0m) => \x1b[93m${json}\x1b[0m`)
+                                    }
+                                } else {
+                                    LOGD(`${fullMethodName}(\x1b[96m'${args_str}'\x1b[0m)`)
+                                }
+
                             } else {
-                                LOGD(`${fullMethodName}(\x1b[96m'${args_str}'\x1b[0m)`)
+                                const args_str: string = arguments.length == 0 ? '' : Array.prototype.slice.call(arguments).map(String).join("','")
+                                if (returnValue) {
+                                    LOGD(`${fullMethodName}(\x1b[96m'${args_str}'\x1b[0m) => \x1b[93m${returnValue}\x1b[0m`)
+                                } else {
+                                    LOGD(`${fullMethodName}(\x1b[96m'${args_str}'\x1b[0m)`)
+                                }
                             }
+
                         }
 
                         return returnValue
